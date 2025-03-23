@@ -1,4 +1,4 @@
-module github.com/fgrzl/logging
+module github.com/fgrzl/es
 
 go 1.24.0
 
