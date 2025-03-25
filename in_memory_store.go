@@ -1,46 +1,54 @@
 package es
 
 import (
+	"context"
 	"fmt"
 	"sync"
-
-	"github.com/google/uuid"
 )
 
-var _ EventStore = (*InMemoryEventStore)(nil)
+func NewInMemoryEventStore() Store {
+	return &InMemoryEventStore{}
+}
 
 type InMemoryEventStore struct {
-	events map[uuid.UUID][]DomainEvent
-	mu     sync.RWMutex
+	data sync.Map
 }
 
-func NewInMemoryEventStore() *InMemoryEventStore {
-	return &InMemoryEventStore{
-		events: make(map[uuid.UUID][]DomainEvent),
-	}
-}
+// LoadEvents implements Store.
+func (s *InMemoryEventStore) LoadEvents(ctx context.Context, entity Entity, seequence uint64) ([]DomainEvent, error) {
 
-func (s *InMemoryEventStore) SaveEvents(aggregateID uuid.UUID, events []DomainEvent, expectedVersion uint64) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	existing := s.events[aggregateID]
-	currentVersion := uint64(len(existing))
-	if expectedVersion != currentVersion {
-		return fmt.Errorf("version mismatch: expected %d, got %d", expectedVersion, len(existing))
-	}
-
-	s.events[aggregateID] = append(existing, events...)
-	return nil
-}
-
-func (s *InMemoryEventStore) LoadEvents(aggregateID uuid.UUID, minVersion uint64) ([]DomainEvent, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	events, ok := s.events[aggregateID]
+	obj, ok := s.data.Load(entity)
 	if !ok {
-		return nil, fmt.Errorf("no events found for aggregate ID %s", aggregateID)
+		return nil, nil
 	}
-	return events, nil
+	events, ok := obj.([]DomainEvent)
+	if !ok {
+		return nil, fmt.Errorf("invalid type for events: %T", obj)
+	}
+
+	var result []DomainEvent
+	for _, event := range events {
+		if event.GetSequence() >= seequence {
+			result = append(result, event)
+		}
+	}
+	return result, nil
+}
+
+// SaveEvents implements Store.
+func (s *InMemoryEventStore) SaveEvents(ctx context.Context, entity Entity, events []DomainEvent, expectedSequence uint64) error {
+	existing, ok := s.data.Load(entity)
+	if !ok {
+		s.data.Store(entity, events)
+		return nil
+	}
+
+	currentSequence := uint64(len(existing.([]DomainEvent)))
+	if expectedSequence != currentSequence {
+		return fmt.Errorf("version mismatch: expected %d, got %d", expectedSequence, currentSequence)
+	}
+
+	newEvents := append(existing.([]DomainEvent), events...)
+	s.data.CompareAndSwap(entity, existing, newEvents)
+	return nil
 }

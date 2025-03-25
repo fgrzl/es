@@ -1,8 +1,8 @@
 package es
 
-import "github.com/google/uuid"
+import "context"
 
-type EventStore interface {
-	SaveEvents(aggregateID uuid.UUID, events []DomainEvent, expectedVersion uint64) error
-	LoadEvents(aggregateID uuid.UUID, minVersion uint64) ([]DomainEvent, error)
+type Store interface {
+	SaveEvents(ctx context.Context, entity Entity, events []DomainEvent, expectedSequence uint64) error
+	LoadEvents(ctx context.Context, entity Entity, minSequence uint64) ([]DomainEvent, error)
 }
