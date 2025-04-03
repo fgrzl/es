@@ -20,7 +20,6 @@ type streamStore struct {
 	client streams.Client
 }
 
-// LoadEvents implements Store.
 func (s *streamStore) LoadEvents(ctx context.Context, entity Entity, minSequence uint64) ([]DomainEvent, error) {
 	args := &streams.ConsumeSegment{
 		Space:       entity.Type,
@@ -46,7 +45,6 @@ func (s *streamStore) LoadEvents(ctx context.Context, entity Entity, minSequence
 	return enumerators.ToSlice(domainEvents)
 }
 
-// SaveEvents implements Store.
 func (s *streamStore) SaveEvents(ctx context.Context, entity Entity, events []DomainEvent, expectedSequence uint64) error {
 
 	space, segment := entity.Type, entity.ID.String()
