@@ -81,3 +81,36 @@ func TestUnmarshalJSON(t *testing.T) {
 		})
 	}
 }
+
+func TestNewEntity(t *testing.T) {
+	id := uuid.New()
+	entityType := "testType"
+	entity := NewEntity(id, entityType)
+
+	assert.Equal(t, id, entity.ID)
+	assert.Equal(t, entityType, entity.Type)
+}
+
+func TestNewEntityOfType(t *testing.T) {
+	entityType := "testType"
+	entity := NewEntityOfType(entityType)
+
+	assert.NotEqual(t, uuid.Nil, entity.ID)
+	assert.Equal(t, entityType, entity.Type)
+}
+
+func TestIsEmpty(t *testing.T) {
+	emptyEntity := EmptyEntity
+	nonEmptyEntity := NewEntity(uuid.New(), "testType")
+
+	assert.True(t, emptyEntity.IsEmpty())
+	assert.False(t, nonEmptyEntity.IsEmpty())
+}
+
+func TestNamespace(t *testing.T) {
+	entity := NewEntity(uuid.New(), "testType")
+	namespace := entity.Namespace()
+
+	assert.NotEqual(t, uuid.Nil, namespace)
+	assert.Equal(t, uuid.NewSHA1(entity.ID, []byte(entity.Type)), namespace)
+}
