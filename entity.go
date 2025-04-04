@@ -4,34 +4,30 @@ import (
 	"github.com/google/uuid"
 )
 
-func NewEntity(id uuid.UUID, entityType string) Entity {
+func NewEntity(id uuid.UUID, space string) Entity {
 	return Entity{
-		ID:   id,
-		Type: entityType,
+		ID:    id,
+		Space: space,
 	}
 }
 
-func NewEntityOfType(entityType string) Entity {
+func NewEntityOfSpace(entitySpace string) Entity {
 	return Entity{
-		ID:   uuid.New(),
-		Type: entityType,
+		ID:    uuid.New(),
+		Space: entitySpace,
 	}
 }
 
 // EmptyEntity represents an uninitialized entity.
 var EmptyEntity = Entity{}
 
-// Entity represents an entity with an ID and a Type. Use this as a value type.
+// Entity represents an entity with an ID and a Space. Use this as a value type.
 type Entity struct {
-	ID   uuid.UUID `json:"-"`
-	Type string    `json:"-"`
+	ID    uuid.UUID `json:"id"`
+	Space string    `json:"space"`
 }
 
 // IsEmpty checks if an entity is empty.
 func (e Entity) IsEmpty() bool {
 	return e == EmptyEntity
-}
-
-func (e Entity) Namespace() uuid.UUID {
-	return uuid.NewSHA1(e.ID, []byte(e.Type))
 }

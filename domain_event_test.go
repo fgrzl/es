@@ -10,14 +10,14 @@ import (
 )
 
 type MockEntity struct {
-	ID   uuid.UUID
-	Type string
+	ID    uuid.UUID
+	Space string
 }
 
 func TestDomainEventBase(t *testing.T) {
 	entity := es.Entity{
-		ID:   uuid.New(),
-		Type: "TestEntity",
+		ID:    uuid.New(),
+		Space: "TestEntity",
 	}
 
 	metadata := es.EventMetadata{
@@ -37,8 +37,8 @@ func TestDomainEventBase(t *testing.T) {
 		assert.Equal(t, metadata.Entity.ID, event.GetAggregateID())
 	})
 
-	t.Run("GetAggregateType", func(t *testing.T) {
-		assert.Equal(t, metadata.Entity.Type, event.GetAggregateType())
+	t.Run("GetAggregateSpace", func(t *testing.T) {
+		assert.Equal(t, metadata.Entity.Space, event.GetAggregateSpace())
 	})
 
 	t.Run("GetCausationID", func(t *testing.T) {

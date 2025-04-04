@@ -93,7 +93,7 @@ func (e *DummyCreated) GetDiscriminator() string { return "dummy_created" }
 
 func NewDummy() *Dummy {
 	id := uuid.New()
-	dummy := &Dummy{Aggregate: NewAggregate(context.Background(), NewEntity(id, "dummy"))}
+	dummy := &Dummy{Aggregate: NewAggregate(context.Background(), "dummy", id)}
 	RegisterHandler(dummy, dummy.OnDummyCreated)
 	return dummy
 }

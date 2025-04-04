@@ -14,8 +14,8 @@ type HandlerFactory func(Aggregate) DomainEventHandler
 
 func RegisterHandler[T DomainEvent](a Aggregate, handler func(T)) {
 	var zero T
-	eventType := zero.GetDiscriminator()
-	a.RegisterHandler(eventType, func(event DomainEvent) {
+	eventDiscriminator := zero.GetDiscriminator()
+	a.RegisterHandler(eventDiscriminator, func(event DomainEvent) {
 		e, ok := event.(T)
 		if !ok {
 			panic(fmt.Sprintf("RegisterHandler: event %T does not match expected type %T", event, zero))
@@ -50,14 +50,32 @@ type Aggregate interface {
 }
 
 // NewAggregate creates a new base aggregate
-func NewAggregate(ctx context.Context, entity Entity) Aggregate {
+func NewAggregate(ctx context.Context, space string, id uuid.UUID) Aggregate {
+	if id == uuid.Nil {
+		panic("NewAggregate: id cannot be nil")
+	}
+	if space == "" {
+		panic("NewAggregate: space cannot be empty")
+	}
+	entity := NewEntity(id, space)
+
 	if ctx == nil {
 		ctx = context.Background()
 	}
+
+	correlationID := messaging.GetCorrelationID(ctx)
+	if correlationID == uuid.Nil {
+		correlationID = uuid.New()
+	}
+	causationID := messaging.GetCausationID(ctx)
+	if causationID == uuid.Nil {
+		causationID = uuid.New()
+	}
+
 	return &aggregateBase{
 		entity:        entity,
-		correlationID: messaging.GetCorrelationID(ctx),
-		causationID:   messaging.GetCausationID(ctx),
+		correlationID: correlationID,
+		causationID:   causationID,
 		handlers:      make(map[string]DomainEventHandler),
 	}
 }
@@ -76,7 +94,7 @@ type aggregateBase struct {
 
 func (a *aggregateBase) GetEntity() Entity           { return a.entity }
 func (a *aggregateBase) GetAggregateID() uuid.UUID   { return a.entity.ID }
-func (a *aggregateBase) GetAggregateType() string    { return a.entity.Type }
+func (a *aggregateBase) GetAggregateSpace() string   { return a.entity.Space }
 func (a *aggregateBase) GetCorrelationID() uuid.UUID { return a.correlationID }
 func (a *aggregateBase) GetCausationID() uuid.UUID   { return a.causationID }
 func (a *aggregateBase) AppendCommitted(event DomainEvent) {

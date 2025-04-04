@@ -14,6 +14,7 @@ func Register[T polymorphic.Polymorphic](factory func() T) {
 type DomainEvent interface {
 	messaging.Event
 	GetAggregateID() uuid.UUID
+	GetAggregateSpace() string
 	GetCausationID() uuid.UUID
 	GetCorrelationID() uuid.UUID
 	GetEntity() Entity
@@ -40,7 +41,7 @@ type DomainEventBase struct {
 }
 
 func (e *DomainEventBase) GetAggregateID() uuid.UUID   { return e.Metadata.Entity.ID }
-func (e *DomainEventBase) GetAggregateType() string    { return e.Metadata.Entity.Type }
+func (e *DomainEventBase) GetAggregateSpace() string   { return e.Metadata.Entity.Space }
 func (e *DomainEventBase) GetCausationID() uuid.UUID   { return e.Metadata.CausationID }
 func (e *DomainEventBase) GetCorrelationID() uuid.UUID { return e.Metadata.CorrelationID }
 func (e *DomainEventBase) GetEntity() Entity           { return e.Metadata.Entity }
