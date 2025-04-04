@@ -82,36 +82,60 @@ func NewAggregate(ctx context.Context, space string, id uuid.UUID) Aggregate {
 
 // aggregateBase provides event-sourcing behavior
 type aggregateBase struct {
-	entity              Entity
-	correlationID       uuid.UUID
-	causationID         uuid.UUID
-	committed           []DomainEvent
-	committedSequence   uint64
-	uncommitted         []DomainEvent
-	uncommittedSequence uint64
-	handlers            map[string]DomainEventHandler
+	entity        Entity
+	correlationID uuid.UUID
+	causationID   uuid.UUID
+	committed     []DomainEvent
+	uncommitted   []DomainEvent
+	handlers      map[string]DomainEventHandler
 }
 
-func (a *aggregateBase) GetEntity() Entity           { return a.entity }
-func (a *aggregateBase) GetAggregateID() uuid.UUID   { return a.entity.ID }
-func (a *aggregateBase) GetAggregateSpace() string   { return a.entity.Space }
-func (a *aggregateBase) GetCorrelationID() uuid.UUID { return a.correlationID }
-func (a *aggregateBase) GetCausationID() uuid.UUID   { return a.causationID }
+func (a *aggregateBase) GetEntity() Entity {
+	return a.entity
+}
+
+func (a *aggregateBase) GetAggregateID() uuid.UUID {
+	return a.entity.ID
+}
+
+func (a *aggregateBase) GetAggregateSpace() string {
+	return a.entity.Space
+}
+
+func (a *aggregateBase) GetCorrelationID() uuid.UUID {
+	return a.correlationID
+}
+
+func (a *aggregateBase) GetCausationID() uuid.UUID {
+	return a.causationID
+}
+
 func (a *aggregateBase) AppendCommitted(event DomainEvent) {
 	a.committed = append(a.committed, event)
-	a.committedSequence = event.GetSequence()
 }
+
 func (a *aggregateBase) AppendUncommitted(event DomainEvent) {
 	a.uncommitted = append(a.uncommitted, event)
-	a.uncommittedSequence = event.GetSequence()
 }
-func (a *aggregateBase) GetCommittedEvents() []DomainEvent   { return a.committed }
-func (a *aggregateBase) GetCommittedSequence() uint64        { return a.committedSequence }
-func (a *aggregateBase) GetUncommittedEvents() []DomainEvent { return a.uncommitted }
-func (a *aggregateBase) GetUncommittedSequence() uint64      { return a.uncommittedSequence }
+
+func (a *aggregateBase) GetCommittedEvents() []DomainEvent {
+	return a.committed
+}
+
+func (a *aggregateBase) GetCommittedSequence() uint64 {
+	return uint64(len(a.committed))
+}
+
+func (a *aggregateBase) GetUncommittedEvents() []DomainEvent {
+	return a.uncommitted
+}
+
+func (a *aggregateBase) GetUncommittedSequence() uint64 {
+	return uint64(len(a.committed) + len(a.uncommitted))
+}
+
 func (a *aggregateBase) Commit() {
 	a.committed = append(a.committed, a.uncommitted...)
-	a.committedSequence = a.uncommittedSequence
 	a.uncommitted = make([]DomainEvent, 0)
 }
 
