@@ -11,10 +11,10 @@ func NewEntity(id uuid.UUID, space string) Entity {
 	}
 }
 
-func NewEntityOfSpace(entitySpace string) Entity {
+func NewEnityInSpace(space string) Entity {
 	return Entity{
 		ID:    uuid.New(),
-		Space: entitySpace,
+		Space: space,
 	}
 }
 
