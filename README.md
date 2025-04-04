@@ -1,8 +1,6 @@
 [![ci](https://github.com/fgrzl/es/actions/workflows/ci.yml/badge.svg)](https://github.com/fgrzl/es/actions/workflows/ci.yml)
 [![Dependabot Updates](https://github.com/fgrzl/es/actions/workflows/dependabot/dependabot-updates/badge.svg)](https://github.com/fgrzl/es/actions/workflows/dependabot/dependabot-updates)
 
-Here's a `README.md` with a generic `Cat` aggregate using your pattern:
-
 # es
 
 Basic event sourcing library for Go with clean, extensible interfaces.
@@ -68,9 +66,22 @@ func (c *Cat) OnCatAdopted(e *CatAdopted) {
 ### Events
 
 ```go
+func init(){
+	// Register the events as polymorphic types
+	polymorphic.Register(func() *CatRenamed { return &CatRenamed{} })
+	polymorphic.Register(func() *CatRenamed { return &CatRenamed{} })
+}
+
 type CatRenamed struct {
+	es.DomainEventBase
 	Name string
 }
 
-type CatAdopted struct{}
+func (e *CatRenamed) GetDiscriminator() string { return "cat.renamed" }
+
+type CatAdopted struct{
+	es.DomainEventBase
+}
+
+func (e *CatRenamed) GetDiscriminator() string { return "cat.adopted" }
 ```
