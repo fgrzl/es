@@ -16,8 +16,8 @@ type MockEntity struct {
 
 func TestDomainEventBase(t *testing.T) {
 	entity := es.Entity{
-		ID:    uuid.New(),
-		Space: "TestEntity",
+		ID:   uuid.New(),
+		Area: "TestEntity",
 	}
 
 	metadata := es.EventMetadata{
@@ -38,7 +38,7 @@ func TestDomainEventBase(t *testing.T) {
 	})
 
 	t.Run("GetAggregateSpace", func(t *testing.T) {
-		assert.Equal(t, metadata.Entity.Space, event.GetAggregateSpace())
+		assert.Equal(t, metadata.Entity.Area, event.GetAggregateSpace())
 	})
 
 	t.Run("GetCausationID", func(t *testing.T) {

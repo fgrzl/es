@@ -22,10 +22,10 @@ type streamStore struct {
 }
 
 func (s *streamStore) LoadEvents(ctx context.Context, entity Entity, minSequence uint64) ([]DomainEvent, error) {
-	slog.Debug("Loading events", "space", entity.Space, "segment", entity.ID.String(), "minSequence", minSequence)
+	slog.Debug("Loading events", "space", entity.Area, "segment", entity.ID.String(), "minSequence", minSequence)
 
 	args := &streams.ConsumeSegment{
-		Space:       entity.Space,
+		Space:       entity.Area,
 		Segment:     entity.ID.String(),
 		MinSequence: minSequence,
 	}
@@ -50,9 +50,9 @@ func (s *streamStore) LoadEvents(ctx context.Context, entity Entity, minSequence
 }
 
 func (s *streamStore) SaveEvents(ctx context.Context, entity Entity, events []DomainEvent, expectedSequence uint64) error {
-	slog.Debug("Saving events", "space", entity.Space, "segment", entity.ID.String(), "expectedSequence", expectedSequence, "eventCount", len(events))
+	slog.Debug("Saving events", "space", entity.Area, "segment", entity.ID.String(), "expectedSequence", expectedSequence, "eventCount", len(events))
 
-	space, segment := entity.Space, entity.ID.String()
+	space, segment := entity.Area, entity.ID.String()
 	records := enumerators.Map(
 		enumerators.Slice(events),
 		func(event DomainEvent) (*streams.Record, error) {

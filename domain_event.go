@@ -41,7 +41,7 @@ type DomainEventBase struct {
 }
 
 func (e *DomainEventBase) GetAggregateID() uuid.UUID   { return e.Metadata.Entity.ID }
-func (e *DomainEventBase) GetAggregateSpace() string   { return e.Metadata.Entity.Space }
+func (e *DomainEventBase) GetAggregateSpace() string   { return e.Metadata.Entity.Area }
 func (e *DomainEventBase) GetCausationID() uuid.UUID   { return e.Metadata.CausationID }
 func (e *DomainEventBase) GetCorrelationID() uuid.UUID { return e.Metadata.CorrelationID }
 func (e *DomainEventBase) GetEntity() Entity           { return e.Metadata.Entity }
