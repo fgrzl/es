@@ -5,7 +5,7 @@ go 1.24.0
 require (
 	github.com/fgrzl/enumerators v0.0.0-20250410102914-6a54f0117505
 	github.com/fgrzl/json v0.0.0-20250414172401-2714459e8922
-	github.com/fgrzl/messaging v0.0.0-20250424114825-87fef4530c8b
+	github.com/fgrzl/messaging v0.0.0-20250429181503-f370a02dc6fe
 	github.com/fgrzl/streams v0.0.0-20250414163655-c4d2d61a9704
 	github.com/fgrzl/timestamp v0.0.0-20250225130908-89948d7bd71d
 	github.com/google/uuid v1.6.0

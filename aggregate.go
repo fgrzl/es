@@ -50,17 +50,17 @@ type Aggregate interface {
 }
 
 func NewAggregate(ctx context.Context, area string, id uuid.UUID) Aggregate {
-	return newAggregate(ctx, uuid.Nil, ScopeGlobal, area, id)
+	return newAggregate(ctx, ScopeGlobal, area, uuid.Nil, id)
 }
 
-func NewTenantAggregate(ctx context.Context, tentantID uuid.UUID, scope Scope, area string, id uuid.UUID) Aggregate {
+func NewTenantAggregate(ctx context.Context, area string, tentantID, id uuid.UUID) Aggregate {
 	if tentantID == uuid.Nil {
 		panic("NewOrgAggregate: orgID must not be nil")
 	}
-	return newAggregate(ctx, tentantID, scope, area, id)
+	return newAggregate(ctx, ScopeTenant, area, tentantID, id)
 }
 
-func newAggregate(ctx context.Context, tenantID uuid.UUID, scope Scope, area string, id uuid.UUID) Aggregate {
+func newAggregate(ctx context.Context, scope Scope, area string, tenantID, id uuid.UUID) Aggregate {
 	if id == uuid.Nil {
 		panic("newAggregate: id cannot be nil")
 	}

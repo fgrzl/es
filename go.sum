@@ -8,8 +8,8 @@ github.com/fgrzl/json v0.0.0-20250414172401-2714459e8922 h1:2en3jiEdn/kCG3YQKR+U
 github.com/fgrzl/json v0.0.0-20250414172401-2714459e8922/go.mod h1:L7IAn4wOCSsQGJ44XZePleqf7/tAZPgBDC6A3Egv9e8=
 github.com/fgrzl/lexkey v0.0.0-20250404134045-06756616f02b h1:C8VidHCs+ETGfWPKmilU/5XlrkMmBl8XZEtSUQSPNwU=
 github.com/fgrzl/lexkey v0.0.0-20250404134045-06756616f02b/go.mod h1:DfrNX28YpZvrxyDm+jYQ6Jv2pJbZxQoMS1dcBSwBv58=
-github.com/fgrzl/messaging v0.0.0-20250424114825-87fef4530c8b h1:FSNYBtBJAsvgPMHtbsmU4+sy9j6ukXz+IAmae8yy0bM=
-github.com/fgrzl/messaging v0.0.0-20250424114825-87fef4530c8b/go.mod h1:z1pveSubL7c5x7sOZIQrftw8XFvgvwGV4wp9s/RdiEs=
+github.com/fgrzl/messaging v0.0.0-20250429181503-f370a02dc6fe h1:7DcXivkLZFNCWrkQqWLsKukKG89xa4T9MNZlDyjttDY=
+github.com/fgrzl/messaging v0.0.0-20250429181503-f370a02dc6fe/go.mod h1:dvMPND/9se5rXxMInpRH7xd4pund4r9rlS4eZtq5iTs=
 github.com/fgrzl/streams v0.0.0-20250414163655-c4d2d61a9704 h1:wVlSMrfiohN5D4b1qsEsFr2h6XrUiBWSpWHzyjwfF8U=
 github.com/fgrzl/streams v0.0.0-20250414163655-c4d2d61a9704/go.mod h1:p9o1Gv+Ix+reY42J65EVK3mm0hozRM85c3OQtV61lqQ=
 github.com/fgrzl/tickle v0.0.0-20250326142409-26a8ec1d1519 h1:omNh8HjkDKv99svi4ndtPC7xKMIvLw64197pwOayJqA=

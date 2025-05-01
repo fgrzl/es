@@ -12,9 +12,10 @@ func Register[T polymorphic.Polymorphic](factory func() T) {
 
 // DomainEvent interface for all events.
 type DomainEvent interface {
-	messaging.Event
+	messaging.Message
 	GetAggregateID() uuid.UUID
 	GetAggregateSpace() string
+	GetTenantID() uuid.UUID
 	GetCausationID() uuid.UUID
 	GetCorrelationID() uuid.UUID
 	GetEntity() Entity
@@ -36,18 +37,20 @@ type EventMetadata struct {
 }
 
 type DomainEventBase struct {
-	messaging.Event
+	messaging.Message
 	Metadata EventMetadata `json:"metadata"`
 }
 
 func (e *DomainEventBase) GetAggregateID() uuid.UUID   { return e.Metadata.Entity.ID }
-func (e *DomainEventBase) GetAggregateSpace() string   { return e.Metadata.Entity.Area }
+func (e *DomainEventBase) GetAggregateSpace() string   { return e.Metadata.Entity.GetSpace() }
 func (e *DomainEventBase) GetCausationID() uuid.UUID   { return e.Metadata.CausationID }
 func (e *DomainEventBase) GetCorrelationID() uuid.UUID { return e.Metadata.CorrelationID }
 func (e *DomainEventBase) GetEntity() Entity           { return e.Metadata.Entity }
 func (e *DomainEventBase) GetEventID() uuid.UUID       { return e.Metadata.EventID }
 func (e *DomainEventBase) GetMetadata() EventMetadata  { return e.Metadata }
 func (e *DomainEventBase) GetSequence() uint64         { return e.Metadata.Sequence }
+func (e *DomainEventBase) GetScope() Scope             { return e.Metadata.Entity.GetScope() }
+func (e *DomainEventBase) GetTenantID() uuid.UUID      { return e.Metadata.Entity.GetTenantID() }
 func (e *DomainEventBase) GetTimestamp() int64         { return e.Metadata.Timestamp }
 func (e *DomainEventBase) SetMetadata(metadata EventMetadata) {
 	var empty EventMetadata
