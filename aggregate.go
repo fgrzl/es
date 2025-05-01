@@ -49,15 +49,31 @@ type Aggregate interface {
 	Commit()
 }
 
-// NewAggregate creates a new base aggregate
-func NewAggregate(ctx context.Context, space string, id uuid.UUID) Aggregate {
+func NewAggregate(ctx context.Context, area string, id uuid.UUID) Aggregate {
+	return newAggregate(ctx, ScopeGlobal, area, uuid.Nil, id)
+}
+
+func NewTenantAggregate(ctx context.Context, area string, tentantID, id uuid.UUID) Aggregate {
+	if tentantID == uuid.Nil {
+		panic("NewOrgAggregate: orgID must not be nil")
+	}
+	return newAggregate(ctx, ScopeTenant, area, tentantID, id)
+}
+
+func newAggregate(ctx context.Context, scope Scope, area string, tenantID, id uuid.UUID) Aggregate {
 	if id == uuid.Nil {
-		panic("NewAggregate: id cannot be nil")
+		panic("newAggregate: id cannot be nil")
 	}
-	if space == "" {
-		panic("NewAggregate: space cannot be empty")
+	if area == "" {
+		panic("newAggregate: space cannot be empty")
 	}
-	entity := NewEntity(id, space)
+
+	entity := Entity{
+		ID:       id,
+		Area:     area,
+		TenantID: tenantID,
+		Scope:    scope,
+	}
 
 	if ctx == nil {
 		ctx = context.Background()
@@ -99,7 +115,7 @@ func (a *aggregateBase) GetAggregateID() uuid.UUID {
 }
 
 func (a *aggregateBase) GetAggregateSpace() string {
-	return a.entity.Space
+	return a.entity.Area
 }
 
 func (a *aggregateBase) GetCorrelationID() uuid.UUID {
