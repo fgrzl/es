@@ -14,8 +14,8 @@ github.com/fgrzl/streams v0.0.0-20250414163655-c4d2d61a9704 h1:wVlSMrfiohN5D4b1q
 github.com/fgrzl/streams v0.0.0-20250414163655-c4d2d61a9704/go.mod h1:p9o1Gv+Ix+reY42J65EVK3mm0hozRM85c3OQtV61lqQ=
 github.com/fgrzl/tickle v0.0.0-20250326142409-26a8ec1d1519 h1:omNh8HjkDKv99svi4ndtPC7xKMIvLw64197pwOayJqA=
 github.com/fgrzl/tickle v0.0.0-20250326142409-26a8ec1d1519/go.mod h1:LPt4T6+pz9tCQg+E7AGe6oprQNU+2SJRD0kOEqwnBdo=
-github.com/fgrzl/timestamp v0.0.0-20250225130908-89948d7bd71d h1:h70KpLp2smJW5eb7pvESk40lsYM3VoFCJmJ/7Y4cs1Y=
-github.com/fgrzl/timestamp v0.0.0-20250225130908-89948d7bd71d/go.mod h1:P+pm97eJskSlGp6EpOwz6CBXzRZTWMaL7UQG2IcCHrw=
+github.com/fgrzl/timestamp v0.1.0-alpha.7 h1:fpZd2kTyqXdensrODPrTq+4AqWFAp8uhJT6y4HQG5Wk=
+github.com/fgrzl/timestamp v0.1.0-alpha.7/go.mod h1:P+pm97eJskSlGp6EpOwz6CBXzRZTWMaL7UQG2IcCHrw=
 github.com/golang/snappy v1.0.0 h1:Oy607GVXHs7RtbggtPBnr2RmDArIsAefDwvrdWvRhGs=
 github.com/golang/snappy v1.0.0/go.mod h1:/XxbfmMg8lxefKM7IXC3fBNl/7bRcc72aCRzEWrmP2Q=
 github.com/google/uuid v1.6.0 h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=
