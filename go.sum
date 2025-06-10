@@ -3,8 +3,8 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/fgrzl/claims v0.0.1-alpha.15 h1:FmKiM79vkMPILrZTUGcmM+C5zkpZEC3NpbGzl9g3tck=
 github.com/fgrzl/claims v0.0.1-alpha.15/go.mod h1:sN7zr8FIiKmESWghf+BuKvPpliLMUjkeQp93S/Z/imE=
-github.com/fgrzl/json v0.0.0-20250514205914-77c559a7b06d h1:97aOsKoAGNaq7dpkPg1U4T04JBVzgc5rpIgIRv/MoVQ=
-github.com/fgrzl/json v0.0.0-20250514205914-77c559a7b06d/go.mod h1:L7IAn4wOCSsQGJ44XZePleqf7/tAZPgBDC6A3Egv9e8=
+github.com/fgrzl/json v0.0.1-alpha.29 h1:fWnYt+BG0rSaXTkskB/GMNtRrdjQAyrHJ4L3UcHp/aw=
+github.com/fgrzl/json v0.0.1-alpha.29/go.mod h1:L7IAn4wOCSsQGJ44XZePleqf7/tAZPgBDC6A3Egv9e8=
 github.com/fgrzl/lexkey v0.1.0-alpha.14 h1:ZgSGY13wta+cJK/OqM1iSYCUEdY8ixcS/nFL++VhYtI=
 github.com/fgrzl/lexkey v0.1.0-alpha.14/go.mod h1:DfrNX28YpZvrxyDm+jYQ6Jv2pJbZxQoMS1dcBSwBv58=
 github.com/fgrzl/messaging v0.0.1-alpha.41 h1:Nammgqx7BRuALJOLTGn6ZqMZGEHb1N/26NOBp+dKP4Q=
