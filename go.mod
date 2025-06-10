@@ -5,8 +5,8 @@ go 1.24.3
 toolchain go1.24.4
 
 require (
-	github.com/fgrzl/json v0.0.0-20250514205914-77c559a7b06d
-	github.com/fgrzl/messaging v0.0.1-alpha.41
+	github.com/fgrzl/json v0.0.1-alpha.29
+	github.com/fgrzl/messaging v0.0.1-alpha.45
 	github.com/fgrzl/timestamp v0.1.0-alpha.7
 	github.com/google/uuid v1.6.0
 	github.com/stretchr/testify v1.10.0
@@ -15,7 +15,7 @@ require (
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fgrzl/claims v0.0.1-alpha.15 // indirect
-	github.com/fgrzl/lexkey v0.1.0-alpha.14 // indirect
+	github.com/fgrzl/lexkey v0.1.0-alpha.15 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
