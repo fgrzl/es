@@ -31,10 +31,10 @@ func NewTenantEntity(tenantID, id uuid.UUID, area string) Entity {
 	}
 }
 
-func NewTenantEnityInArea(orgID, id uuid.UUID, area string) Entity {
+func NewTenantEnityInArea(tenantID, id uuid.UUID, area string) Entity {
 	return Entity{
 		ID:       uuid.New(),
-		TenantID: orgID,
+		TenantID: tenantID,
 		Area:     area,
 		Scope:    ScopeTenant,
 	}
