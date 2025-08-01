@@ -9,9 +9,15 @@ import (
 	"github.com/google/uuid"
 )
 
+// DomainEventHandler defines a function that handles a domain event.
 type DomainEventHandler func(DomainEvent)
+
+// HandlerFactory creates a domain event handler for a specific aggregate.
 type HandlerFactory func(Aggregate) DomainEventHandler
 
+// RegisterHandler registers a typed event handler for a specific event type on an aggregate.
+// The handler will be called when the event type is raised or loaded.
+// This function uses generics to provide type safety for event handlers.
 func RegisterHandler[T DomainEvent](a Aggregate, handler func(T)) {
 	var zero T
 	eventDiscriminator := zero.GetDiscriminator()
@@ -24,7 +30,9 @@ func RegisterHandler[T DomainEvent](a Aggregate, handler func(T)) {
 	})
 }
 
-// Aggregate defines the interface for event-sourced aggregates
+// Aggregate defines the interface for event-sourced aggregates.
+// Aggregates are the primary building blocks of event sourcing, representing
+// business entities that generate and respond to domain events.
 type Aggregate interface {
 	// Metadata
 	GetEntity() Entity
@@ -49,15 +57,17 @@ type Aggregate interface {
 	Commit()
 }
 
+// NewAggregate creates a new global-scoped aggregate with the specified area and ID.
 func NewAggregate(ctx context.Context, area string, id uuid.UUID) Aggregate {
 	return newAggregate(ctx, ScopeGlobal, area, uuid.Nil, id)
 }
 
-func NewTenantAggregate(ctx context.Context, area string, tentantID, id uuid.UUID) Aggregate {
-	if tentantID == uuid.Nil {
-		panic("NewOrgAggregate: orgID must not be nil")
+// NewTenantAggregate creates a new tenant-scoped aggregate with the specified area, tenant ID, and aggregate ID.
+func NewTenantAggregate(ctx context.Context, area string, tenantID, id uuid.UUID) Aggregate {
+	if tenantID == uuid.Nil {
+		panic("NewTenantAggregate: tenantID must not be nil")
 	}
-	return newAggregate(ctx, ScopeTenant, area, tentantID, id)
+	return newAggregate(ctx, ScopeTenant, area, tenantID, id)
 }
 
 func newAggregate(ctx context.Context, scope Scope, area string, tenantID, id uuid.UUID) Aggregate {
@@ -96,7 +106,8 @@ func newAggregate(ctx context.Context, scope Scope, area string, tenantID, id uu
 	}
 }
 
-// aggregateBase provides event-sourcing behavior
+// aggregateBase provides event-sourcing behavior for aggregate implementations.
+// It should be embedded in concrete aggregate types to inherit event sourcing capabilities.
 type aggregateBase struct {
 	entity        Entity
 	correlationID uuid.UUID

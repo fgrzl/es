@@ -1,0 +1,178 @@
+package es
+
+import (
+	"testing"
+
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
+)
+
+func TestShouldCreateEntityWithSpecifiedValues(t *testing.T) {
+	// Arrange
+	id := uuid.New()
+	area := "test-area"
+
+	// Act
+	entity := NewEntity(id, area)
+
+	// Assert
+	assert.Equal(t, id, entity.ID)
+	assert.Equal(t, area, entity.Area)
+	assert.Equal(t, ScopeGlobal, entity.Scope)
+	assert.Equal(t, uuid.Nil, entity.TenantID)
+}
+
+func TestShouldCreateEntityInAreaWithGeneratedID(t *testing.T) {
+	// Arrange
+	area := "test-area"
+
+	// Act
+	entity := NewEntityInArea(area)
+
+	// Assert
+	assert.NotEqual(t, uuid.Nil, entity.ID)
+	assert.Equal(t, area, entity.Area)
+	assert.Equal(t, ScopeGlobal, entity.Scope)
+	assert.Equal(t, uuid.Nil, entity.TenantID)
+}
+
+func TestShouldCreateTenantEntityWithSpecifiedValues(t *testing.T) {
+	// Arrange
+	tenantID := uuid.New()
+	id := uuid.New()
+	area := "test-area"
+
+	// Act
+	entity := NewTenantEntity(tenantID, id, area)
+
+	// Assert
+	assert.Equal(t, id, entity.ID)
+	assert.Equal(t, area, entity.Area)
+	assert.Equal(t, ScopeTenant, entity.Scope)
+	assert.Equal(t, tenantID, entity.TenantID)
+}
+
+func TestShouldCreateTenantEntityInAreaWithGeneratedID(t *testing.T) {
+	// Arrange
+	tenantID := uuid.New()
+	id := uuid.New()
+	area := "test-area"
+
+	// Act
+	entity := NewTenantEntityInArea(tenantID, id, area)
+
+	// Assert
+	assert.NotEqual(t, uuid.Nil, entity.ID)
+	assert.Equal(t, area, entity.Area)
+	assert.Equal(t, ScopeTenant, entity.Scope)
+	assert.Equal(t, tenantID, entity.TenantID)
+}
+
+func TestShouldReturnCorrectSpaceForGlobalEntity(t *testing.T) {
+	// Arrange
+	entity := NewEntity(uuid.New(), "test-area")
+
+	// Act
+	space := entity.GetSpace()
+
+	// Assert
+	assert.Equal(t, "test-area", space)
+}
+
+func TestShouldReturnCorrectSpaceForTenantEntity(t *testing.T) {
+	// Arrange
+	tenantID := uuid.New()
+	entity := NewTenantEntity(tenantID, uuid.New(), "test-area")
+
+	// Act
+	space := entity.GetSpace()
+
+	// Assert
+	expected := tenantID.String() + ".test-area"
+	assert.Equal(t, expected, space)
+}
+
+func TestShouldDetectEmptyEntity(t *testing.T) {
+	// Arrange
+	empty := Entity{}
+	nonEmpty := NewEntity(uuid.New(), "test")
+
+	// Act & Assert
+	assert.True(t, empty.IsEmpty())
+	assert.False(t, nonEmpty.IsEmpty())
+	assert.True(t, EmptyEntity.IsEmpty())
+}
+
+func TestShouldGenerateUniqueNamespace(t *testing.T) {
+	// Arrange
+	id := uuid.New()
+	entity1 := NewEntity(id, "area1")
+	entity2 := NewEntity(id, "area2")
+	entity3 := NewTenantEntity(uuid.New(), id, "area1")
+
+	// Act
+	ns1 := entity1.GetNamespace()
+	ns2 := entity2.GetNamespace()
+	ns3 := entity3.GetNamespace()
+
+	// Assert
+	assert.NotEqual(t, ns1, ns2) // Different areas should have different namespaces
+	assert.NotEqual(t, ns1, ns3) // Different tenants should have different namespaces
+	assert.NotEqual(t, ns2, ns3)
+}
+
+func TestShouldPanicWhenGettingNamespaceWithEmptyArea(t *testing.T) {
+	// Arrange
+	entity := Entity{ID: uuid.New()}
+
+	// Act & Assert
+	assert.Panics(t, func() {
+		entity.GetNamespace()
+	})
+}
+
+func TestShouldReturnCorrectEntityIDForGivenEntity(t *testing.T) {
+	// Arrange
+	id := uuid.New()
+	entity := NewEntity(id, "test-area")
+
+	// Act
+	result := entity.GetID()
+
+	// Assert
+	assert.Equal(t, id, result)
+}
+
+func TestShouldReturnCorrectTenantIDForEntity(t *testing.T) {
+	// Arrange
+	tenantID := uuid.New()
+	entity := NewTenantEntity(tenantID, uuid.New(), "test-area")
+
+	// Act
+	result := entity.GetTenantID()
+
+	// Assert
+	assert.Equal(t, tenantID, result)
+}
+
+func TestShouldReturnCorrectScopeForGlobalEntity(t *testing.T) {
+	// Arrange
+	entity := NewEntity(uuid.New(), "test-area")
+
+	// Act
+	scope := entity.GetScope()
+
+	// Assert
+	assert.Equal(t, ScopeGlobal, scope)
+}
+
+func TestShouldReturnCorrectScopeForTenantEntity(t *testing.T) {
+	// Arrange
+	entity := NewTenantEntity(uuid.New(), uuid.New(), "test-area")
+
+	// Act
+	scope := entity.GetScope()
+
+	// Assert
+	assert.Equal(t, ScopeTenant, scope)
+}

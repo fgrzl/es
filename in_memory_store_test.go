@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestInMemoryEventStore_Save(t *testing.T) {
+func TestShouldSaveEventsToInMemoryStore(t *testing.T) {
 	// Arrange
 	store := NewInMemoryEventStore()
 	ctx := context.Background()
@@ -25,7 +25,7 @@ func TestInMemoryEventStore_Save(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestInMemoryEventStore_Load(t *testing.T) {
+func TestShouldLoadSavedEventsFromInMemoryStore(t *testing.T) {
 	// Arrange
 	store := NewInMemoryEventStore()
 	ctx := context.Background()
@@ -46,7 +46,7 @@ func TestInMemoryEventStore_Load(t *testing.T) {
 
 }
 
-func TestInMemoryEventStore_SaveEvents_VersionMismatch(t *testing.T) {
+func TestShouldReturnErrorWhenVersionMismatchOnSave(t *testing.T) {
 
 	// Arrange
 	store := NewInMemoryEventStore()
@@ -66,7 +66,7 @@ func TestInMemoryEventStore_SaveEvents_VersionMismatch(t *testing.T) {
 	assert.Error(t, err, "expected version mismatch error")
 }
 
-func TestInMemoryEventStore_LoadEvents_NoEvents(t *testing.T) {
+func TestShouldReturnEmptySliceWhenNoEventsExist(t *testing.T) {
 
 	// Arrange
 	store := NewInMemoryEventStore()

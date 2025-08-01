@@ -2,8 +2,13 @@ package es
 
 import "context"
 
+// Repository provides high-level operations for loading and saving aggregates.
+// It coordinates between aggregates and the underlying event store.
 type Repository interface {
+	// Load reconstructs an aggregate from its stored events.
 	Load(context.Context, Aggregate) error
+
+	// Save persists uncommitted events from an aggregate to the store.
 	Save(context.Context, Aggregate) error
 }
 
@@ -11,6 +16,7 @@ type repository struct {
 	store Store
 }
 
+// NewRepository creates a new repository with the given event store.
 func NewRepository(store Store) Repository {
 	return &repository{store: store}
 }
