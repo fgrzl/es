@@ -21,7 +21,7 @@ type InMemoryEventStore struct {
 }
 
 // LoadEvents implements Store.LoadEvents.
-// It retrieves all events for the specified entity starting from the given sequence number.
+// It retrieves all events for the specified entity starting from the given `sequence` number.
 func (s *InMemoryEventStore) LoadEvents(ctx context.Context, entity Entity, sequence uint64) ([]DomainEvent, error) {
 
 	obj, ok := s.data.Load(entity)
