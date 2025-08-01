@@ -81,4 +81,12 @@ func TestDomainEventBase(t *testing.T) {
 		event.SetMetadata(newMetadata)
 		assert.Equal(t, metadata, event.GetMetadata()) // Metadata should not change if already set
 	})
+
+	t.Run("GetScope", func(t *testing.T) {
+		assert.Equal(t, metadata.Entity.GetScope(), event.GetScope())
+	})
+
+	t.Run("GetTenantID", func(t *testing.T) {
+		assert.Equal(t, metadata.Entity.GetTenantID(), event.GetTenantID())
+	})
 }

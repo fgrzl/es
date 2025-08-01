@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestShouldApplyEvent(t *testing.T) {
+func TestShouldApplyEventWhenCreated(t *testing.T) {
 	// Arrange
 	dummy := NewDummy()
 
@@ -21,7 +21,7 @@ func TestShouldApplyEvent(t *testing.T) {
 	assert.Equal(t, "test", dummy.name)
 }
 
-func TestAggregateBase_Raise(t *testing.T) {
+func TestShouldRaiseEventAndAddToUncommitted(t *testing.T) {
 	// Arrange
 	dummy := NewDummy()
 
@@ -37,7 +37,7 @@ func TestAggregateBase_Raise(t *testing.T) {
 	assert.Equal(t, "test", event.Name)
 }
 
-func TestAggregateBase_Commit(t *testing.T) {
+func TestShouldCommitUncommittedEventsWhenCommitCalled(t *testing.T) {
 	// Arrange
 	dummy := NewDummy()
 	_ = dummy.Create("test")
@@ -53,7 +53,7 @@ func TestAggregateBase_Commit(t *testing.T) {
 	assert.Equal(t, "test", event.Name)
 }
 
-func TestAggregateBase_Load(t *testing.T) {
+func TestShouldLoadEventsAndApplyToAggregate(t *testing.T) {
 	// Arrange
 	dummy := NewDummy()
 	event := &DummyCreated{Name: "loaded"}
@@ -74,13 +74,39 @@ func TestAggregateBase_Load(t *testing.T) {
 	assert.Equal(t, uint64(1), dummy.GetCommittedSequence())
 }
 
-func TestAggregateBase_RegisterHandler(t *testing.T) {
+func TestShouldPanicWhenRegisteringDuplicateHandler(t *testing.T) {
 	// Arrange
 	dummy := NewDummy()
 
 	// Act & Assert
 	assert.Panics(t, func() {
 		RegisterHandler(dummy, dummy.OnDummyCreated)
+	})
+}
+
+func TestShouldCreateTenantAggregateWithValidTenantID(t *testing.T) {
+	// Arrange
+	tenantID := uuid.New()
+	aggregateID := uuid.New()
+	ctx := context.Background()
+
+	// Act
+	agg := NewTenantAggregate(ctx, "test-area", tenantID, aggregateID)
+
+	// Assert
+	assert.NotNil(t, agg)
+	assert.Equal(t, aggregateID, agg.GetAggregateID())
+	assert.Equal(t, tenantID, agg.GetEntity().TenantID)
+}
+
+func TestShouldPanicWhenCreatingTenantAggregateWithNilTenantID(t *testing.T) {
+	// Arrange
+	aggregateID := uuid.New()
+	ctx := context.Background()
+
+	// Act & Assert
+	assert.Panics(t, func() {
+		NewTenantAggregate(ctx, "test-area", uuid.Nil, aggregateID)
 	})
 }
 

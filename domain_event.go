@@ -6,11 +6,14 @@ import (
 	"github.com/google/uuid"
 )
 
+// Register registers a polymorphic type factory for JSON serialization/deserialization.
+// This should be called during package initialization for all domain event types.
 func Register[T polymorphic.Polymorphic](factory func() T) {
 	polymorphic.Register(factory)
 }
 
-// DomainEvent interface for all events.
+// DomainEvent defines the interface that all domain events must implement.
+// It extends messaging.Message with event sourcing specific metadata and functionality.
 type DomainEvent interface {
 	messaging.Message
 	GetAggregateID() uuid.UUID
@@ -26,7 +29,7 @@ type DomainEvent interface {
 	SetMetadata(metadata EventMetadata)
 }
 
-// DomainEventBase provides common event fields.
+// EventMetadata contains the metadata fields common to all domain events.
 type EventMetadata struct {
 	Entity        Entity    `json:"entity"`
 	EventID       uuid.UUID `json:"event_id"`
@@ -36,6 +39,8 @@ type EventMetadata struct {
 	Sequence      uint64    `json:"sequence"`
 }
 
+// DomainEventBase provides a base implementation of the DomainEvent interface.
+// Event types should embed this struct to inherit standard event behavior.
 type DomainEventBase struct {
 	messaging.Message
 	Metadata EventMetadata `json:"metadata"`

@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 )
 
+// NewEntity creates a new global-scoped entity with the specified ID and area.
 func NewEntity(id uuid.UUID, area string) Entity {
 	return Entity{
 		ID:    id,
@@ -14,7 +15,8 @@ func NewEntity(id uuid.UUID, area string) Entity {
 	}
 }
 
-func NewEnityInArea(area string) Entity {
+// NewEntityInArea creates a new global-scoped entity with a generated ID in the specified area.
+func NewEntityInArea(area string) Entity {
 	return Entity{
 		ID:    uuid.New(),
 		Area:  area,
@@ -22,6 +24,7 @@ func NewEnityInArea(area string) Entity {
 	}
 }
 
+// NewTenantEntity creates a new tenant-scoped entity with the specified tenant ID, entity ID, and area.
 func NewTenantEntity(tenantID, id uuid.UUID, area string) Entity {
 	return Entity{
 		ID:       id,
@@ -31,7 +34,8 @@ func NewTenantEntity(tenantID, id uuid.UUID, area string) Entity {
 	}
 }
 
-func NewTenantEnityInArea(tenantID, id uuid.UUID, area string) Entity {
+// NewTenantEntityInArea creates a new tenant-scoped entity with a generated ID in the specified area.
+func NewTenantEntityInArea(tenantID, id uuid.UUID, area string) Entity {
 	return Entity{
 		ID:       uuid.New(),
 		TenantID: tenantID,
@@ -43,6 +47,8 @@ func NewTenantEnityInArea(tenantID, id uuid.UUID, area string) Entity {
 // EmptyEntity represents an uninitialized entity.
 var EmptyEntity = Entity{}
 
+// Entity represents an aggregate's identity and scope within the event store.
+// It uniquely identifies an aggregate within its scope and area.
 type Entity struct {
 	ID       uuid.UUID `json:"id"`
 	Area     string    `json:"area"`
