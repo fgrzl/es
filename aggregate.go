@@ -207,7 +207,7 @@ func (a *aggregateBase) Raise(event DomainEvent) error {
 
 	// Validate aggregate space
 	validSpaces := event.GetSpaces()
-	aggregateSpace := event.GetAggregateSpace()
+	aggregateSpace := event.GetArea()
 	isValid := false
 	for _, space := range validSpaces {
 		if space == aggregateSpace {

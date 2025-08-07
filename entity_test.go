@@ -73,7 +73,7 @@ func TestShouldReturnCorrectSpaceForGlobalEntity(t *testing.T) {
 	entity := NewEntity(uuid.New(), "test-area")
 
 	// Act
-	space := entity.GetSpace()
+	space := entity.Area
 
 	// Assert
 	assert.Equal(t, "test-area", space)
@@ -85,10 +85,10 @@ func TestShouldReturnCorrectSpaceForTenantEntity(t *testing.T) {
 	entity := NewTenantEntity(tenantID, uuid.New(), "test-area")
 
 	// Act
-	space := entity.GetSpace()
+	space := entity.Area
 
 	// Assert
-	expected := tenantID.String() + ".test-area"
+	expected := "test-area"
 	assert.Equal(t, expected, space)
 }
 

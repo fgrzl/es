@@ -38,7 +38,7 @@ func TestDomainEventBase(t *testing.T) {
 	})
 
 	t.Run("GetAggregateSpace", func(t *testing.T) {
-		assert.Equal(t, metadata.Entity.Area, event.GetAggregateSpace())
+		assert.Equal(t, metadata.Entity.Area, event.GetArea())
 	})
 
 	t.Run("GetCausationID", func(t *testing.T) {

@@ -101,15 +101,6 @@ func (e *Entity) GetID() uuid.UUID {
 	return e.ID
 }
 
-func (e *Entity) GetSpace() string {
-
-	if e.TenantID != uuid.Nil {
-		return e.TenantID.String() + "." + e.Area
-	}
-
-	return e.Area
-}
-
 func (e *Entity) GetTenantID() uuid.UUID {
 	return e.TenantID
 }
