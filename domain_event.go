@@ -18,6 +18,7 @@ type DomainEvent interface {
 	messaging.Message
 	GetAggregateID() uuid.UUID
 	GetAggregateSpace() string
+	GetSpaces() []string
 	GetTenantID() uuid.UUID
 	GetCausationID() uuid.UUID
 	GetCorrelationID() uuid.UUID

@@ -9,6 +9,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const (
+	AreaTest  string = "test-area"
+	AreaDummy string = "dummy"
+)
+
 func TestShouldApplyEventWhenCreated(t *testing.T) {
 	// Arrange
 	dummy := NewDummy()
@@ -116,6 +121,7 @@ type DummyCreated struct {
 }
 
 func (e *DummyCreated) GetDiscriminator() string { return "dummy_created" }
+func (e *DummyCreated) GetSpaces() []string      { return []string{AreaTest, AreaDummy} }
 
 func NewDummy() *Dummy {
 	id := uuid.New()

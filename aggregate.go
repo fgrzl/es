@@ -9,6 +9,15 @@ import (
 	"github.com/google/uuid"
 )
 
+const (
+	errRegisterHandlerTypeMismatch   = "RegisterHandler: event %T does not match expected type %T"
+	errRegisterHandlerAlreadyExists  = "RegisterHandler: handler for event %s already exists"
+	errNewTenantAggregateNilTenantID = "NewTenantAggregate: tenantID must not be nil"
+	errNewAggregateNilID             = "newAggregate: id cannot be nil"
+	errNewAggregateEmptySpace        = "newAggregate: space cannot be empty"
+	errRaiseInvalidAggregateSpace    = "Raise: aggregate space '%s' is not valid for event %T"
+)
+
 // DomainEventHandler defines a function that handles a domain event.
 type DomainEventHandler func(DomainEvent)
 
@@ -24,7 +33,7 @@ func RegisterHandler[T DomainEvent](a Aggregate, handler func(T)) {
 	a.RegisterHandler(eventDiscriminator, func(event DomainEvent) {
 		e, ok := event.(T)
 		if !ok {
-			panic(fmt.Sprintf("RegisterHandler: event %T does not match expected type %T", event, zero))
+			panic(fmt.Sprintf(errRegisterHandlerTypeMismatch, event, zero))
 		}
 		handler(e)
 	})
@@ -65,17 +74,17 @@ func NewAggregate(ctx context.Context, area string, id uuid.UUID) Aggregate {
 // NewTenantAggregate creates a new tenant-scoped aggregate with the specified area, tenant ID, and aggregate ID.
 func NewTenantAggregate(ctx context.Context, area string, tenantID, id uuid.UUID) Aggregate {
 	if tenantID == uuid.Nil {
-		panic("NewTenantAggregate: tenantID must not be nil")
+		panic(errNewTenantAggregateNilTenantID)
 	}
 	return newAggregate(ctx, ScopeTenant, area, tenantID, id)
 }
 
 func newAggregate(ctx context.Context, scope Scope, area string, tenantID, id uuid.UUID) Aggregate {
 	if id == uuid.Nil {
-		panic("newAggregate: id cannot be nil")
+		panic(errNewAggregateNilID)
 	}
 	if area == "" {
-		panic("newAggregate: space cannot be empty")
+		panic(errNewAggregateEmptySpace)
 	}
 
 	entity := Entity{
@@ -177,15 +186,16 @@ func (a *aggregateBase) applyEvent(event DomainEvent) {
 func (a *aggregateBase) RegisterHandler(discriminator string, handler DomainEventHandler) {
 
 	if _, exists := a.handlers[discriminator]; exists {
-		panic(fmt.Sprintf("RegisterHandler: handler for event %s already exists", discriminator))
+		panic(fmt.Sprintf(errRegisterHandlerAlreadyExists, discriminator))
 	}
 
 	a.handlers[discriminator] = handler
 }
 
-// Raise applies an event to an aggregate and adds it to uncommitted events
+// Raise applies an event to the aggregate, validates its space, and adds it to uncommitted events.
+// It panics if the event's aggregate space is not valid for this aggregate.
 func (a *aggregateBase) Raise(event DomainEvent) error {
-
+	// Set event metadata
 	event.SetMetadata(EventMetadata{
 		Entity:        a.GetEntity(),
 		EventID:       uuid.New(),
@@ -195,6 +205,21 @@ func (a *aggregateBase) Raise(event DomainEvent) error {
 		Sequence:      a.GetUncommittedSequence() + 1,
 	})
 
+	// Validate aggregate space
+	validSpaces := event.GetSpaces()
+	aggregateSpace := event.GetAggregateSpace()
+	isValid := false
+	for _, space := range validSpaces {
+		if space == aggregateSpace {
+			isValid = true
+			break
+		}
+	}
+	if !isValid {
+		panic(fmt.Sprintf(errRaiseInvalidAggregateSpace, aggregateSpace, event))
+	}
+
+	// Apply event and append to uncommitted
 	a.applyEvent(event)
 	a.AppendUncommitted(event)
 	return nil

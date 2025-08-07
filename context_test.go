@@ -13,14 +13,16 @@ func TestShouldCreateContextWithEventMetadata(t *testing.T) {
 	originalCtx := context.Background()
 	entity := NewEntity(uuid.New(), "test-area")
 
-	event := &DomainEventBase{
-		Metadata: EventMetadata{
-			Entity:        entity,
-			EventID:       uuid.New(),
-			CorrelationID: uuid.New(),
-			CausationID:   uuid.New(),
-			Timestamp:     123456789,
-			Sequence:      1,
+	event := &mockDomainEvent{
+		DomainEventBase: &DomainEventBase{
+			Metadata: EventMetadata{
+				Entity:        entity,
+				EventID:       uuid.New(),
+				CorrelationID: uuid.New(),
+				CausationID:   uuid.New(),
+				Timestamp:     123456789,
+				Sequence:      1,
+			},
 		},
 	}
 
@@ -41,14 +43,16 @@ func TestShouldPreserveExistingContextValues(t *testing.T) {
 	originalCtx := context.WithValue(context.Background(), key, value)
 	entity := NewEntity(uuid.New(), "test-area")
 
-	event := &DomainEventBase{
-		Metadata: EventMetadata{
-			Entity:        entity,
-			EventID:       uuid.New(),
-			CorrelationID: uuid.New(),
-			CausationID:   uuid.New(),
-			Timestamp:     123456789,
-			Sequence:      1,
+	event := &mockDomainEvent{
+		DomainEventBase: &DomainEventBase{
+			Metadata: EventMetadata{
+				Entity:        entity,
+				EventID:       uuid.New(),
+				CorrelationID: uuid.New(),
+				CausationID:   uuid.New(),
+				Timestamp:     123456789,
+				Sequence:      1,
+			},
 		},
 	}
 

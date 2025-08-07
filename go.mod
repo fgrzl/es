@@ -5,21 +5,40 @@ go 1.24.3
 toolchain go1.24.4
 
 require (
-	github.com/fgrzl/json v0.1.0-alpha.40
-	github.com/fgrzl/messaging v0.0.1-alpha.55
+	github.com/fgrzl/json v0.1.0-alpha.41
+	github.com/fgrzl/messaging v0.0.1-alpha.60
 	github.com/fgrzl/timestamp v0.1.0-alpha.11
 	github.com/google/uuid v1.6.0
 	github.com/stretchr/testify v1.10.0
 )
 
 require (
+	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/fgrzl/claims v0.0.1-alpha.17 // indirect
-	github.com/fgrzl/lexkey v0.1.0-alpha.32 // indirect
-	github.com/kr/pretty v0.3.1 // indirect
+	github.com/fgrzl/claims v0.0.1-alpha.19 // indirect
+	github.com/fgrzl/telemetry v0.1.0-alpha.9 // indirect
+	github.com/go-logr/logr v1.4.3 // indirect
+	github.com/go-logr/stdr v1.2.2 // indirect
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
-	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
+	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
+	go.opentelemetry.io/otel v1.37.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.37.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.37.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.37.0 // indirect
+	go.opentelemetry.io/otel/metric v1.37.0 // indirect
+	go.opentelemetry.io/otel/sdk v1.37.0 // indirect
+	go.opentelemetry.io/otel/sdk/metric v1.37.0 // indirect
+	go.opentelemetry.io/otel/trace v1.37.0 // indirect
+	go.opentelemetry.io/proto/otlp v1.7.1 // indirect
+	golang.org/x/net v0.42.0 // indirect
+	golang.org/x/sys v0.35.0 // indirect
+	golang.org/x/text v0.28.0 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20250804133106-a7a43d27e69b // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250804133106-a7a43d27e69b // indirect
+	google.golang.org/grpc v1.74.2 // indirect
+	google.golang.org/protobuf v1.36.7 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
