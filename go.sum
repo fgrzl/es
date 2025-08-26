@@ -4,8 +4,8 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/fgrzl/claims v0.0.1-alpha.19 h1:6LerzTa5Ag+FJyMGPO/kNm0yKOxpgjXZLza6h8WVscg=
 github.com/fgrzl/claims v0.0.1-alpha.19/go.mod h1:AOUqWTtgnwlcwaHqJLVoAgmFjuBCCJFhZlyFzazXQ00=
-github.com/fgrzl/json v0.1.0-alpha.41 h1:SUDvrwD0DPyRMeYjr+hMpIPLfHakRlvfzXQUW0neB5g=
-github.com/fgrzl/json v0.1.0-alpha.41/go.mod h1:uhY90IO9L/wJ4qXdqHBS0PLC14YlwrpUMU8O2D9YGxQ=
+github.com/fgrzl/json v0.1.0-alpha.52 h1:sOktDvJR/5CV+rcqjrYrf+ELZIU2q/z9WczG6SJUG1M=
+github.com/fgrzl/json v0.1.0-alpha.52/go.mod h1:uhY90IO9L/wJ4qXdqHBS0PLC14YlwrpUMU8O2D9YGxQ=
 github.com/fgrzl/messaging v0.0.1-alpha.60 h1:U/OPb6XZh+1ugyJQK0h7xT7mOZDG4sJcTlTiwflDbaA=
 github.com/fgrzl/messaging v0.0.1-alpha.60/go.mod h1:IwwfmS/RkHjcZwxLdOwz1nj7M/mFpuWdPjm4UKo726Y=
 github.com/fgrzl/telemetry v0.1.0-alpha.9 h1:pv8bfH66JP5P+MkqtKlCeyOTBJh+aThLLg1J5edB+Q8=
@@ -59,8 +59,6 @@ go.opentelemetry.io/proto/otlp v1.7.1 h1:gTOMpGDb0WTBOP8JaO72iL3auEZhVmAQg4ipjOV
 go.opentelemetry.io/proto/otlp v1.7.1/go.mod h1:b2rVh6rfI/s2pHWNlB7ILJcRALpcNDzKhACevjI+ZnE=
 go.uber.org/goleak v1.3.0 h1:2K3zAYmnTNqV73imy9J1T3WC+gmCePx2hEGkimedGto=
 go.uber.org/goleak v1.3.0/go.mod h1:CoHD4mav9JJNrW/WLlf7HGZPjdw8EucARQHekz1X6bE=
-golang.org/x/net v0.42.0 h1:jzkYrhi3YQWD6MLBJcsklgQsoAcw89EcZbJw8Z614hs=
-golang.org/x/net v0.42.0/go.mod h1:FF1RA5d3u7nAYA4z2TkclSCKh68eSXtiFwcWQpPXdt8=
 golang.org/x/net v0.43.0 h1:lat02VYK2j4aLzMzecihNvTlJNQUq316m2Mr9rnM6YE=
 golang.org/x/net v0.43.0/go.mod h1:vhO1fvI4dGsIjh73sWfUVjj3N7CA9WkKJNQm2svM6Jg=
 golang.org/x/sys v0.35.0 h1:vz1N37gP5bs89s7He8XuIYXpyY0+QlsKmzipCbUtyxI=

@@ -5,7 +5,7 @@ go 1.24.3
 toolchain go1.24.4
 
 require (
-	github.com/fgrzl/json v0.1.0-alpha.41
+	github.com/fgrzl/json v0.1.0-alpha.52
 	github.com/fgrzl/messaging v0.0.1-alpha.60
 	github.com/fgrzl/timestamp v0.1.0-alpha.11
 	github.com/google/uuid v1.6.0
