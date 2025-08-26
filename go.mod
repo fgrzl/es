@@ -9,7 +9,7 @@ require (
 	github.com/fgrzl/messaging v0.0.1-alpha.60
 	github.com/fgrzl/timestamp v0.1.0-alpha.11
 	github.com/google/uuid v1.6.0
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.0
 )
 
 require (
