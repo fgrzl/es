@@ -1,16 +1,9 @@
 package es
 
 import (
-	"github.com/fgrzl/json/polymorphic"
 	"github.com/fgrzl/messaging"
 	"github.com/google/uuid"
 )
-
-// Register registers a polymorphic type factory for JSON serialization/deserialization.
-// This should be called during package initialization for all domain event types.
-func Register[T polymorphic.Polymorphic](factory func() T) {
-	polymorphic.Register(factory)
-}
 
 // DomainEvent defines the interface that all domain events must implement.
 // It extends messaging.Message with event sourcing specific metadata and functionality.
