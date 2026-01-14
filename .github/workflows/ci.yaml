@@ -23,11 +23,7 @@ jobs:
 
     steps:
       - name: Checkout Repository
-<<<<<<< HEAD
-        uses: actions/checkout@v4
-=======
         uses: actions/checkout@v5
->>>>>>> 9974fa5fffe781b6041502257b0f2ddfe4560fd6
 
       - name: Set Up Go
         uses: actions/setup-go@v6
