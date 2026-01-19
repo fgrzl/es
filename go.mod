@@ -3,7 +3,7 @@ module github.com/fgrzl/es
 go 1.25.4
 
 require (
-	github.com/fgrzl/messaging v0.0.1-alpha.76
+	github.com/fgrzl/messaging v1.0.0-alpha.4
 	github.com/fgrzl/timestamp v1.0.0-alpha.2
 	github.com/google/uuid v1.6.0
 	github.com/stretchr/testify v1.11.1

@@ -8,8 +8,8 @@ github.com/fgrzl/claims v0.0.1-alpha.22 h1:L2Xv8mTuH24X3mA640cKyWUwkCImtXfhrPodr
 github.com/fgrzl/claims v0.0.1-alpha.22/go.mod h1:pkdT+RIMZGF8ij7zhVicPHNuKZA5fLOD9p6viVXjcH4=
 github.com/fgrzl/json v0.1.0-alpha.62 h1:9b5AqJHVGBgQUbT7aSEHE7frARG5IwBqXNyIpSVnUB0=
 github.com/fgrzl/json v0.1.0-alpha.62/go.mod h1:/aP1mi7tKisgNu8ZRDuCCNm2Sx5ZWCTNlHkSjGvBUoE=
-github.com/fgrzl/messaging v0.0.1-alpha.76 h1:2iA56tY5t3naMsn9rukULLONMvrIYd72fJ0H0xEngZs=
-github.com/fgrzl/messaging v0.0.1-alpha.76/go.mod h1:D2y5VEEvdCZvOde5KoJcBFN8+byEdHizhB6oel5GJXc=
+github.com/fgrzl/messaging v1.0.0-alpha.4 h1:A0JlrPScrzUr1jpwoLaJbEQUBkUFReMPxYBn/CFzuLo=
+github.com/fgrzl/messaging v1.0.0-alpha.4/go.mod h1:UWmh6U9a66lQyvNZXTBy7iuwlNUZ3kqGUp3g4+ReFYw=
 github.com/fgrzl/telemetry v0.1.0-alpha.9 h1:pv8bfH66JP5P+MkqtKlCeyOTBJh+aThLLg1J5edB+Q8=
 github.com/fgrzl/telemetry v0.1.0-alpha.9/go.mod h1:gREmdSzbG2GSupTpSymib6y2QByRRf8LD07YqSMsNi0=
 github.com/fgrzl/timestamp v1.0.0-alpha.2 h1:UI8a7WMzWVoipZM/DfzQ9BRoDWThWP6GRwHVczJXGJg=
