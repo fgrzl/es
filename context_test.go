@@ -12,14 +12,16 @@ func TestShouldCreateContextWithEventMetadata(t *testing.T) {
 	// Arrange
 	originalCtx := context.Background()
 	entity := NewEntity(uuid.New(), "test-area")
+	correlationID := uuid.New()
+	causationID := uuid.New()
 
 	event := &mockDomainEvent{
 		DomainEventBase: &DomainEventBase{
 			Metadata: EventMetadata{
 				Entity:        entity,
 				EventID:       uuid.New(),
-				CorrelationID: uuid.New(),
-				CausationID:   uuid.New(),
+				CorrelationID: correlationID,
+				CausationID:   causationID,
 				Timestamp:     123456789,
 				Sequence:      1,
 			},
@@ -32,6 +34,8 @@ func TestShouldCreateContextWithEventMetadata(t *testing.T) {
 	// Assert
 	assert.NotNil(t, newCtx)
 	assert.NotEqual(t, originalCtx, newCtx)
+	assert.Equal(t, correlationID, GetCorrelationID(newCtx))
+	assert.Equal(t, causationID, GetCausationID(newCtx))
 }
 
 func TestShouldPreserveExistingContextValues(t *testing.T) {

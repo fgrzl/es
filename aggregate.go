@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/fgrzl/messaging"
 	"github.com/fgrzl/timestamp"
 	"github.com/google/uuid"
 )
@@ -98,11 +97,11 @@ func newAggregate(ctx context.Context, scope Scope, area string, tenantID, id uu
 		ctx = context.Background()
 	}
 
-	correlationID := messaging.GetCorrelationID(ctx)
+	correlationID := GetCorrelationID(ctx)
 	if correlationID == uuid.Nil {
 		correlationID = uuid.New()
 	}
-	causationID := messaging.GetCausationID(ctx)
+	causationID := GetCausationID(ctx)
 	if causationID == uuid.Nil {
 		causationID = uuid.New()
 	}

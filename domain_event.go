@@ -1,14 +1,14 @@
 package es
 
 import (
-	"github.com/fgrzl/messaging"
+	"github.com/fgrzl/json/polymorphic"
 	"github.com/google/uuid"
 )
 
 // DomainEvent defines the interface that all domain events must implement.
-// It extends messaging.Message with event sourcing specific metadata and functionality.
+// It extends polymorphic identity with event sourcing specific metadata and functionality.
 type DomainEvent interface {
-	messaging.Message
+	polymorphic.Polymorphic
 	GetAggregateID() uuid.UUID
 	GetArea() string
 	GetSpaces() []string
@@ -36,7 +36,6 @@ type EventMetadata struct {
 // DomainEventBase provides a base implementation of the DomainEvent interface.
 // Event types should embed this struct to inherit standard event behavior.
 type DomainEventBase struct {
-	messaging.Message
 	Metadata EventMetadata `json:"metadata"`
 }
 
