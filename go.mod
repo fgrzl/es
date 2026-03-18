@@ -1,13 +1,11 @@
 module github.com/fgrzl/es
 
-go 1.24.3
-
-toolchain go1.24.4
+go 1.25.6
 
 require (
-	github.com/fgrzl/json v0.1.0-alpha.62
+	github.com/fgrzl/json v1.0.0-alpha.7
 	github.com/fgrzl/telemetry v0.1.0-alpha.9
-	github.com/fgrzl/timestamp v0.1.0-alpha.11
+	github.com/fgrzl/timestamp v1.0.0-alpha.2
 	github.com/google/uuid v1.6.0
 	github.com/stretchr/testify v1.11.1
 )
