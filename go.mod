@@ -3,7 +3,7 @@ module github.com/fgrzl/es
 go 1.25.6
 
 require (
-	github.com/fgrzl/json v1.0.0-alpha.7
+	github.com/fgrzl/json v1.0.0-alpha.8
 	github.com/fgrzl/telemetry v0.1.0-alpha.9
 	github.com/fgrzl/timestamp v1.0.0-alpha.2
 	github.com/google/uuid v1.6.0

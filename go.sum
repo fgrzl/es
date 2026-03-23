@@ -2,8 +2,8 @@ github.com/cenkalti/backoff/v5 v5.0.3 h1:ZN+IMa753KfX5hd8vVaMixjnqRZ3y8CuJKRKj1x
 github.com/cenkalti/backoff/v5 v5.0.3/go.mod h1:rkhZdG3JZukswDf7f0cwqPNk4K0sa+F97BxZthm/crw=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/fgrzl/json v1.0.0-alpha.7 h1:9x4b5314cCLLp/h7wF9btyfl8nNKeYzNSFKymyPbtbs=
-github.com/fgrzl/json v1.0.0-alpha.7/go.mod h1:8ZdkBL2YZJ2w96e9GHs70TG7omuJLPVclgj/uQSTgq8=
+github.com/fgrzl/json v1.0.0-alpha.8 h1:ZEUDmfoZ7vVFTWxSGl/HihIw1oJLucwLe0EF08v7cns=
+github.com/fgrzl/json v1.0.0-alpha.8/go.mod h1:8ZdkBL2YZJ2w96e9GHs70TG7omuJLPVclgj/uQSTgq8=
 github.com/fgrzl/telemetry v0.1.0-alpha.9 h1:pv8bfH66JP5P+MkqtKlCeyOTBJh+aThLLg1J5edB+Q8=
 github.com/fgrzl/telemetry v0.1.0-alpha.9/go.mod h1:gREmdSzbG2GSupTpSymib6y2QByRRf8LD07YqSMsNi0=
 github.com/fgrzl/timestamp v1.0.0-alpha.2 h1:UI8a7WMzWVoipZM/DfzQ9BRoDWThWP6GRwHVczJXGJg=
