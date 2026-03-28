@@ -70,6 +70,8 @@ type Store interface {
 
 High-level interface for aggregate operations.
 
+Repository implementations emit OpenTelemetry spans for `Load` and `Save` operations. The spans include aggregate identity attributes, scope information, correlation and causation IDs when present in the incoming context, and event or sequence counts relevant to the operation.
+
 ```go
 type Repository interface {
     Load(context.Context, Aggregate) error

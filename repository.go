@@ -1,6 +1,11 @@
 package es
 
-import "context"
+import (
+	"context"
+
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+)
 
 // Repository provides high-level operations for loading and saving aggregates.
 // It coordinates between aggregates and the underlying event store.
@@ -22,25 +27,54 @@ func NewRepository(store Store) Repository {
 }
 
 func (r *repository) Load(ctx context.Context, a Aggregate) error {
-	events, err := r.store.LoadEvents(ctx, a.GetEntity(), 0)
+	entity := a.GetEntity()
+	ctx, span := startSpan(ctx, spanRepositoryLoad, entity)
+	defer span.End()
+
+	events, err := r.store.LoadEvents(ctx, entity, 0)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return err
 	}
 
-	return a.Load(events)
+	span.SetAttributes(attribute.Int(attributeEventsCount, len(events)))
+
+	err = a.Load(events)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return err
+	}
+
+	return nil
 }
 
 func (r *repository) Save(ctx context.Context, a Aggregate) error {
+	entity := a.GetEntity()
 	uncommitted := a.GetUncommittedEvents()
+	expectedSequence := a.GetCommittedSequence()
+	ctx, span := startSpan(
+		ctx,
+		spanRepositorySave,
+		entity,
+		attribute.Int(attributeEventsCount, len(uncommitted)),
+		attribute.Int64(attributeSequenceExpected, int64(expectedSequence)),
+		attribute.Int64(attributeSequenceCurrent, int64(a.GetUncommittedSequence())),
+	)
+	defer span.End()
+
 	if len(uncommitted) == 0 {
 		return nil
 	}
-	entity := a.GetEntity()
-	expectedSequence := a.GetCommittedSequence()
+
 	err := r.store.SaveEvents(ctx, entity, uncommitted, expectedSequence)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return err
 	}
+
 	a.Commit()
 	return nil
 }

@@ -13,6 +13,7 @@ A comprehensive event sourcing library for Go providing clean, extensible interf
 - **Repository Pattern**: High-level aggregate persistence with optimistic concurrency control
 - **Multi-tenancy**: Support for global and tenant-scoped aggregates
 - **Context Propagation**: Built-in correlation and causation tracking
+- **OpenTelemetry Spans**: Repository load and save operations emit OTEL spans with aggregate metadata
 
 ## Installation
 
