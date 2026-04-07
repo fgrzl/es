@@ -12,6 +12,7 @@ import (
 const (
 	errRegisterHandlerTypeMismatch   = "RegisterHandler: event %T does not match expected type %T"
 	errRegisterHandlerAlreadyExists  = "RegisterHandler: handler for event %s already exists"
+	errRegisterHandlerNilHandler     = "RegisterHandler: handler must not be nil"
 	errRegisterHandlerNilType        = "RegisterHandler: event type must be concrete"
 	errNewTenantAggregateNilTenantID = "NewTenantAggregate: tenantID must not be nil"
 	errNewAggregateNilID             = "newAggregate: id cannot be nil"
@@ -27,9 +28,15 @@ type HandlerFactory func(Aggregate) DomainEventHandler
 
 // RegisterHandler registers a typed event handler for a specific event type on an aggregate.
 // The handler will be called when the event type is raised or loaded.
-// This function uses generics to provide type safety for event handlers.
+// This function panics on invalid aggregate wiring such as nil handlers,
+// duplicate handlers, or invalid event type parameters.
 func RegisterHandler[T DomainEvent](a Aggregate, handler func(T)) {
+	if handler == nil {
+		panic(errRegisterHandlerNilHandler)
+	}
+
 	expectedEvent := newEventInstance[T]()
+
 	eventDiscriminator := expectedEvent.GetDiscriminator()
 	a.RegisterHandler(eventDiscriminator, func(event DomainEvent) {
 		e, ok := event.(T)
@@ -57,6 +64,11 @@ func newEventInstance[T DomainEvent]() T {
 // Aggregate defines the interface for event-sourced aggregates.
 // Aggregates are the primary building blocks of event sourcing, representing
 // business entities that generate and respond to domain events.
+//
+// The default aggregate implementation in this package intentionally fails fast
+// on invalid aggregate wiring. Constructor validation, duplicate handler
+// registration, invalid handler type parameters, and invalid event-area
+// mappings are treated as programmer errors and panic immediately.
 type Aggregate interface {
 	// Metadata
 	GetEntity() Entity
@@ -82,15 +94,20 @@ type Aggregate interface {
 }
 
 // NewAggregate creates a new global-scoped aggregate with the specified area and ID.
+// It panics when the aggregate definition is invalid, such as when the ID is nil
+// or the area is empty.
 func NewAggregate(ctx context.Context, area string, id uuid.UUID) Aggregate {
 	return newAggregate(ctx, ScopeGlobal, area, uuid.Nil, id)
 }
 
 // NewTenantAggregate creates a new tenant-scoped aggregate with the specified area, tenant ID, and aggregate ID.
+// It panics when the aggregate definition is invalid, such as when the tenant ID
+// or aggregate ID is nil or the area is empty.
 func NewTenantAggregate(ctx context.Context, area string, tenantID, id uuid.UUID) Aggregate {
 	if tenantID == uuid.Nil {
 		panic(errNewTenantAggregateNilTenantID)
 	}
+
 	return newAggregate(ctx, ScopeTenant, area, tenantID, id)
 }
 
@@ -207,8 +224,11 @@ func (a *aggregateBase) RegisterHandler(discriminator string, handler DomainEven
 	a.handlers[discriminator] = handler
 }
 
-// Raise applies an event to the aggregate, validates its space, and adds it to uncommitted events.
-// It panics if the event's aggregate space is not valid for this aggregate.
+// Raise applies an event to the aggregate, validates its area, and adds it to uncommitted events.
+// Business-rule failures should be returned by aggregate command methods before
+// calling Raise. The default aggregate implementation panics when the event
+// definition is not valid for the aggregate because invalid event-area mappings
+// are treated as design-time wiring errors.
 func (a *aggregateBase) Raise(event DomainEvent) error {
 	// Set event metadata
 	event.SetMetadata(EventMetadata{

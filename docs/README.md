@@ -41,6 +41,11 @@ Repositories provide high-level aggregate operations:
 - Compile-time type checking for event handlers
 - Strong typing throughout the API surface
 
+### Fail-Fast Wiring
+- Aggregate construction and handler registration are treated as design-time concerns
+- Invalid aggregate IDs, tenant IDs, duplicate handlers, and invalid event-area mappings panic immediately
+- Business-rule failures should still be returned from command methods as ordinary errors
+
 ### Extensibility
 - Interface-based design allows custom implementations
 - Pluggable event stores for different persistence needs
@@ -71,10 +76,11 @@ Repositories provide high-level aggregate operations:
 - Avoid external dependencies in aggregate logic
 
 ### Error Handling
-- Use standard error types provided by the library
+- Use standard error types provided by the library for store and integration failures
 - Handle concurrency conflicts gracefully
 - Validate business rules before raising events
 - Return early on validation failures
+- Treat aggregate wiring panics as programmer errors to fix rather than runtime conditions to recover from
 
 ### Testing
 - Test business logic through aggregate methods

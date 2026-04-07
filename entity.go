@@ -56,6 +56,7 @@ type Entity struct {
 	Scope    Scope     `json:"scope"`
 }
 
+// UnmarshalJSON unmarshals an entity from JSON while preserving backward compatibility with legacy field names.
 func (e *Entity) UnmarshalJSON(data []byte) error {
 	// Create a shadow type to avoid recursion
 	type Alias Entity
@@ -97,28 +98,43 @@ func (e *Entity) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// GetID returns the entity ID.
 func (e *Entity) GetID() uuid.UUID {
 	return e.ID
 }
 
+// GetTenantID returns the tenant ID.
 func (e *Entity) GetTenantID() uuid.UUID {
 	return e.TenantID
 }
 
+// GetScope returns the entity scope.
 func (e *Entity) GetScope() Scope {
 	return e.Scope
 }
 
+// GetNamespace returns a deterministic namespace UUID for the entity.
+// It panics when the entity does not have an area. Use TryGetNamespace to avoid panics.
 func (e *Entity) GetNamespace() uuid.UUID {
+	namespace, err := e.TryGetNamespace()
+	if err != nil {
+		panic(err.Error())
+	}
+
+	return namespace
+}
+
+// TryGetNamespace returns a deterministic namespace UUID for the entity.
+func (e *Entity) TryGetNamespace() (uuid.UUID, error) {
 	if e.Area == "" {
-		panic("Area is required")
+		return uuid.Nil, wrapSentinelError("Area is required", ErrInvalidEntity)
 	}
 
 	b := make([]byte, len(e.Area)+16)
 	copy(b, e.Area)
 	copy(b[len(e.Area):], e.TenantID[:])
 
-	return uuid.NewSHA1(e.ID, b)
+	return uuid.NewSHA1(e.ID, b), nil
 }
 
 // IsEmpty checks if an entity is empty.

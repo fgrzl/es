@@ -43,10 +43,10 @@ type Cat struct {
 }
 
 func NewCat(id uuid.UUID) *Cat {
-	aggregate := &Cat{Aggregate: es.NewAggregate(context.Background(), "cats", id)}
-	es.RegisterHandler(aggregate, aggregate.OnCatRenamed)
-	es.RegisterHandler(aggregate, aggregate.OnCatAdopted)
-	return aggregate
+	cat := &Cat{Aggregate: es.NewAggregate(context.Background(), "cats", id)}
+	es.RegisterHandler(cat, cat.OnCatRenamed)
+	es.RegisterHandler(cat, cat.OnCatAdopted)
+	return cat
 }
 
 func (c *Cat) Rename(name string) error {
@@ -79,7 +79,7 @@ package animals
 
 import "github.com/fgrzl/es"
 
-func init(){
+func init() {
 	// Register events for polymorphic serialization
 	es.Register(func() *CatRenamed { return &CatRenamed{} })
 	es.Register(func() *CatAdopted { return &CatAdopted{} })
@@ -91,12 +91,14 @@ type CatRenamed struct {
 }
 
 func (e *CatRenamed) GetDiscriminator() string { return "cat.renamed" }
+func (e *CatRenamed) GetSpaces() []string      { return []string{"cats"} }
 
-type CatAdopted struct{
+type CatAdopted struct {
 	es.DomainEventBase
 }
 
 func (e *CatAdopted) GetDiscriminator() string { return "cat.adopted" }
+func (e *CatAdopted) GetSpaces() []string      { return []string{"cats"} }
 ```
 
 ### 3. Use the Repository
@@ -168,6 +170,16 @@ Type-safe event handlers that apply events to aggregate state:
 - Automatically called when events are raised or loaded
 - Keep aggregates in sync with their event stream
 
+### Fail-Fast Wiring
+
+Aggregate wiring is intentionally fail-fast in this library. The default aggregate implementation panics immediately when aggregate definitions are invalid, including:
+- missing aggregate IDs or tenant IDs
+- empty aggregate areas
+- duplicate handler registration
+- event types whose `GetSpaces()` do not include the aggregate area
+
+These are treated as programmer errors in aggregate design, not recoverable runtime conditions. Business-rule failures should still be returned from your command methods as ordinary `error` values.
+
 ### Repository
 
 High-level interface for aggregate persistence:
@@ -192,6 +204,12 @@ tenantCat := es.NewTenantAggregate(ctx, "cats", tenantID, catID)
 The package exports standard sentinel errors for stores and aggregate workflows.
 The built-in in-memory store returns errors matching `ErrConcurrency` for optimistic concurrency conflicts.
 `Repository.Load` passes through store errors and does not synthesize `ErrNotFound` for empty streams.
+
+Aggregate construction and handler wiring intentionally fail fast with panics on invalid design-time setup such as missing IDs, duplicate handlers, or invalid event-area mappings.
+
+The default aggregate implementation does not treat invalid aggregate wiring as a recoverable error path. Use returned `error` values from your own command methods for business validation and state-transition failures.
+
+`(*Entity).TryGetNamespace` remains available when you want a non-panicking namespace helper outside aggregate wiring.
 
 ## Contributing
 

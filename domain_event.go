@@ -39,17 +39,40 @@ type DomainEventBase struct {
 	Metadata EventMetadata `json:"metadata"`
 }
 
-func (e *DomainEventBase) GetAggregateID() uuid.UUID   { return e.Metadata.Entity.ID }
-func (e *DomainEventBase) GetArea() string             { return e.Metadata.Entity.Area }
-func (e *DomainEventBase) GetCausationID() uuid.UUID   { return e.Metadata.CausationID }
+// GetAggregateID returns the aggregate ID stored in the event metadata.
+func (e *DomainEventBase) GetAggregateID() uuid.UUID { return e.Metadata.Entity.ID }
+
+// GetArea returns the aggregate area stored in the event metadata.
+func (e *DomainEventBase) GetArea() string { return e.Metadata.Entity.Area }
+
+// GetCausationID returns the causation ID stored in the event metadata.
+func (e *DomainEventBase) GetCausationID() uuid.UUID { return e.Metadata.CausationID }
+
+// GetCorrelationID returns the correlation ID stored in the event metadata.
 func (e *DomainEventBase) GetCorrelationID() uuid.UUID { return e.Metadata.CorrelationID }
-func (e *DomainEventBase) GetEntity() Entity           { return e.Metadata.Entity }
-func (e *DomainEventBase) GetEventID() uuid.UUID       { return e.Metadata.EventID }
-func (e *DomainEventBase) GetMetadata() EventMetadata  { return e.Metadata }
-func (e *DomainEventBase) GetSequence() uint64         { return e.Metadata.Sequence }
-func (e *DomainEventBase) GetScope() Scope             { return e.Metadata.Entity.GetScope() }
-func (e *DomainEventBase) GetTenantID() uuid.UUID      { return e.Metadata.Entity.GetTenantID() }
-func (e *DomainEventBase) GetTimestamp() int64         { return e.Metadata.Timestamp }
+
+// GetEntity returns the entity stored in the event metadata.
+func (e *DomainEventBase) GetEntity() Entity { return e.Metadata.Entity }
+
+// GetEventID returns the event ID stored in the event metadata.
+func (e *DomainEventBase) GetEventID() uuid.UUID { return e.Metadata.EventID }
+
+// GetMetadata returns the full event metadata.
+func (e *DomainEventBase) GetMetadata() EventMetadata { return e.Metadata }
+
+// GetSequence returns the event sequence number.
+func (e *DomainEventBase) GetSequence() uint64 { return e.Metadata.Sequence }
+
+// GetScope returns the entity scope stored in the event metadata.
+func (e *DomainEventBase) GetScope() Scope { return e.Metadata.Entity.GetScope() }
+
+// GetTenantID returns the tenant ID stored in the event metadata.
+func (e *DomainEventBase) GetTenantID() uuid.UUID { return e.Metadata.Entity.GetTenantID() }
+
+// GetTimestamp returns the event timestamp.
+func (e *DomainEventBase) GetTimestamp() int64 { return e.Metadata.Timestamp }
+
+// SetMetadata stores metadata on the event if it has not already been assigned.
 func (e *DomainEventBase) SetMetadata(metadata EventMetadata) {
 	var empty EventMetadata
 	if e.Metadata == empty {

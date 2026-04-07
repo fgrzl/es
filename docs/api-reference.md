@@ -8,6 +8,8 @@ Complete reference documentation for the `es` event sourcing library.
 
 The main interface for event-sourced aggregates.
 
+The default `aggregateBase` implementation is intentionally fail-fast for aggregate design-time mistakes. Invalid constructor inputs, duplicate handler registration, invalid handler type parameters, and invalid event-area mappings panic immediately instead of being treated as recoverable runtime errors.
+
 ```go
 type Aggregate interface {
     // Metadata
@@ -40,9 +42,10 @@ Interface that all domain events must implement.
 
 ```go
 type DomainEvent interface {
-    messaging.Message
+    polymorphic.Polymorphic
     GetAggregateID() uuid.UUID
-    GetAggregateSpace() string
+    GetArea() string
+    GetSpaces() []string
     GetTenantID() uuid.UUID
     GetCausationID() uuid.UUID
     GetCorrelationID() uuid.UUID
@@ -89,6 +92,10 @@ Creates a new global-scoped aggregate.
 func NewAggregate(ctx context.Context, area string, id uuid.UUID) Aggregate
 ```
 
+This function panics when aggregate wiring is invalid.
+
+Typical panic conditions are a nil aggregate ID or an empty area.
+
 **Parameters:**
 - `ctx`: Context for correlation and causation tracking
 - `area`: Logical grouping for the aggregate type
@@ -101,6 +108,10 @@ Creates a new tenant-scoped aggregate.
 ```go
 func NewTenantAggregate(ctx context.Context, area string, tenantID, id uuid.UUID) Aggregate
 ```
+
+This function panics when aggregate wiring is invalid.
+
+Typical panic conditions are a nil tenant ID, a nil aggregate ID, or an empty area.
 
 **Parameters:**
 - `ctx`: Context for correlation and causation tracking
@@ -133,6 +144,10 @@ Registers a typed event handler for a specific event type.
 ```go
 func RegisterHandler[T DomainEvent](a Aggregate, handler func(T))
 ```
+
+This function panics on invalid aggregate design-time wiring such as duplicate handlers or invalid event type parameters.
+
+Use `RegisterHandler` during aggregate construction so wiring mistakes fail immediately.
 
 **Type Parameters:**
 - `T`: The domain event type to handle
@@ -174,10 +189,10 @@ type Entity struct {
 
 **Methods:**
 - `GetID() uuid.UUID`: Returns the entity ID
-- `GetSpace() string`: Returns the fully qualified space name
 - `GetTenantID() uuid.UUID`: Returns the tenant ID
 - `GetScope() Scope`: Returns the scope (global or tenant)
-- `GetNamespace() uuid.UUID`: Returns a deterministic namespace UUID
+- `GetNamespace() uuid.UUID`: Returns a deterministic namespace UUID and panics when `Area` is empty
+- `TryGetNamespace() (uuid.UUID, error)`: Returns a deterministic namespace UUID without panicking
 - `IsEmpty() bool`: Checks if the entity is uninitialized
 
 ### EventMetadata
@@ -201,7 +216,6 @@ Base implementation of the DomainEvent interface.
 
 ```go
 type DomainEventBase struct {
-    messaging.Message
     Metadata EventMetadata `json:"metadata"`
 }
 ```
@@ -227,13 +241,18 @@ The package exports sentinel errors that custom stores or aggregate workflows ca
 The built-in in-memory store returns errors matching `ErrConcurrency` for optimistic concurrency conflicts.
 `Repository.Load` passes through store errors and does not synthesize `ErrNotFound` for empty streams.
 
+The default aggregate implementation intentionally panics for invalid aggregate design-time setup such as duplicate handlers, missing IDs, or invalid event-area mappings. Those conditions are documented fail-fast aggregate wiring behavior, not recoverable runtime errors.
+
+Use returned `error` values for store failures and business-rule validation in your own command methods. Do not treat aggregate wiring panics as part of the normal control flow.
+
 ```go
 var (
     ErrAlreadyExists        error // Aggregate already exists
     ErrNotFound             error // Aggregate not found
     ErrConcurrency          error // Concurrency conflict detected
-    ErrInvalidEventSpace    error // Invalid event discriminator
+    ErrInvalidEventSpace    error // Compatibility-preserved sentinel for invalid event compatibility checks
     ErrEventHandlerNotFound error // Missing event handler
+    ErrInvalidEntity        error // Entity validation failed
 )
 ```
 
@@ -281,10 +300,8 @@ type MyAggregate struct {
     // ... fields
 }
 
-func NewMyAggregate() *MyAggregate {
-    agg := &MyAggregate{
-        Aggregate: es.NewAggregate(ctx, "my-area", id),
-    }
+func NewMyAggregate(ctx context.Context, id uuid.UUID) *MyAggregate {
+    agg := &MyAggregate{Aggregate: es.NewAggregate(ctx, "my-area", id)}
     
     // Type-safe event handler registration
     es.RegisterHandler(agg, agg.OnMyEvent)

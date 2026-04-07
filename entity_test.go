@@ -121,6 +121,18 @@ func TestShouldGenerateUniqueNamespace(t *testing.T) {
 	assert.NotEqual(t, ns2, ns3)
 }
 
+func TestShouldReturnNamespaceWhenUsingTryGetNamespace(t *testing.T) {
+	// Arrange
+	entity := NewEntity(uuid.New(), "area1")
+
+	// Act
+	namespace, err := entity.TryGetNamespace()
+
+	// Assert
+	assert.NoError(t, err)
+	assert.NotEqual(t, uuid.Nil, namespace)
+}
+
 func TestShouldPanicWhenGettingNamespaceWithEmptyArea(t *testing.T) {
 	// Arrange
 	entity := Entity{ID: uuid.New()}
@@ -129,6 +141,19 @@ func TestShouldPanicWhenGettingNamespaceWithEmptyArea(t *testing.T) {
 	assert.Panics(t, func() {
 		entity.GetNamespace()
 	})
+}
+
+func TestShouldReturnErrorWhenGettingNamespaceWithEmptyAreaUsingTryGetNamespace(t *testing.T) {
+	// Arrange
+	entity := Entity{ID: uuid.New()}
+
+	// Act
+	namespace, err := entity.TryGetNamespace()
+
+	// Assert
+	assert.Equal(t, uuid.Nil, namespace)
+	assert.ErrorIs(t, err, ErrInvalidEntity)
+	assert.EqualError(t, err, "Area is required")
 }
 
 func TestShouldReturnCorrectEntityIDForGivenEntity(t *testing.T) {

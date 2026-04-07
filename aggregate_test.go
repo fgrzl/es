@@ -125,12 +125,37 @@ func TestShouldPanicWhenCreatingTenantAggregateWithNilTenantID(t *testing.T) {
 	})
 }
 
+func TestShouldPanicWhenCreatingAggregateWithNilID(t *testing.T) {
+	// Arrange
+	ctx := context.Background()
+
+	// Act & Assert
+	assert.Panics(t, func() {
+		NewAggregate(ctx, "test-area", uuid.Nil)
+	})
+}
+
+func TestShouldPanicWhenRaisingEventWithInvalidArea(t *testing.T) {
+	// Arrange
+	dummy := NewDummy()
+
+	// Act & Assert
+	assert.Panics(t, func() {
+		_ = dummy.Raise(&WrongAreaDummyCreated{})
+	})
+	assert.Len(t, dummy.GetUncommittedEvents(), 0)
+}
+
 type DummyCreated struct {
 	DomainEventBase
 	Name string
 }
 
 type panicOnNilDiscriminatorEvent struct {
+	DomainEventBase
+}
+
+type WrongAreaDummyCreated struct {
 	DomainEventBase
 }
 
@@ -146,6 +171,9 @@ func (e *panicOnNilDiscriminatorEvent) GetDiscriminator() string {
 }
 
 func (e *panicOnNilDiscriminatorEvent) GetSpaces() []string { return []string{AreaDummy} }
+
+func (e *WrongAreaDummyCreated) GetDiscriminator() string { return "wrong_area_dummy_created" }
+func (e *WrongAreaDummyCreated) GetSpaces() []string      { return []string{AreaTest} }
 
 func NewDummy() *Dummy {
 	id := uuid.New()

@@ -38,6 +38,7 @@ type AccountOpened struct {
 }
 
 func (e *AccountOpened) GetDiscriminator() string { return "account.opened" }
+func (e *AccountOpened) GetSpaces() []string      { return []string{"bank-accounts"} }
 
 type MoneyDeposited struct {
     es.DomainEventBase
@@ -45,6 +46,7 @@ type MoneyDeposited struct {
 }
 
 func (e *MoneyDeposited) GetDiscriminator() string { return "money.deposited" }
+func (e *MoneyDeposited) GetSpaces() []string      { return []string{"bank-accounts"} }
 
 type MoneyWithdrawn struct {
     es.DomainEventBase
@@ -52,6 +54,7 @@ type MoneyWithdrawn struct {
 }
 
 func (e *MoneyWithdrawn) GetDiscriminator() string { return "money.withdrawn" }
+func (e *MoneyWithdrawn) GetSpaces() []string      { return []string{"bank-accounts"} }
 ```
 
 ## Step 2: Create Your Aggregate
@@ -70,15 +73,16 @@ import (
 
 type BankAccount struct {
     es.Aggregate
+    id        uuid.UUID
     accountID string
     balance   int64
     isOpen    bool
 }
 
-func NewBankAccount(accountID string) *BankAccount {
-    id := uuid.New()
+func NewBankAccount(id uuid.UUID, accountID string) *BankAccount {
     account := &BankAccount{
         Aggregate: es.NewAggregate(context.Background(), "bank-accounts", id),
+        id:        id,
         accountID: accountID,
     }
     
@@ -154,6 +158,8 @@ func (a *BankAccount) IsOpen() bool {
 }
 ```
 
+Aggregate wiring is intentionally fail-fast. `NewAggregate`, `NewTenantAggregate`, `RegisterHandler`, and invalid event-area mappings in the default `Raise` implementation panic immediately when the aggregate definition is invalid. Treat those as programmer errors in aggregate design. Business-rule failures, such as trying to withdraw too much money, should still be returned as normal `error` values from command methods.
+
 ## Step 3: Use the Repository
 
 Create a repository to persist and load your aggregates:
@@ -167,6 +173,7 @@ import (
     "log"
     
     "github.com/fgrzl/es"
+    "github.com/google/uuid"
     "myapp/bankaccount"
 )
 
@@ -176,7 +183,8 @@ func main() {
     repo := es.NewRepository(store)
     
     // Create a new bank account
-    account := bankaccount.NewBankAccount("ACC-001")
+    aggregateID := uuid.New()
+    account := bankaccount.NewBankAccount(aggregateID, "ACC-001")
     
     // Perform business operations
     if err := account.Open(1000); err != nil {
@@ -199,8 +207,7 @@ func main() {
     }
     
     // Later, load the aggregate
-    loadedAccount := bankaccount.NewBankAccount("ACC-001")
-    loadedAccount.Aggregate = account.Aggregate // Use same aggregate ID
+    loadedAccount := bankaccount.NewBankAccount(aggregateID, "ACC-001")
     
     if err := repo.Load(context.Background(), loadedAccount); err != nil {
         log.Fatal(err)
@@ -219,12 +226,14 @@ package bankaccount
 
 import (
     "testing"
+
+    "github.com/google/uuid"
     "github.com/stretchr/testify/assert"
 )
 
 func TestShouldOpenAccountWithInitialBalance(t *testing.T) {
     // Arrange
-    account := NewBankAccount("ACC-001")
+    account := NewBankAccount(uuid.New(), "ACC-001")
     
     // Act
     err := account.Open(1000)
@@ -237,11 +246,12 @@ func TestShouldOpenAccountWithInitialBalance(t *testing.T) {
 
 func TestShouldDepositMoneyWhenAccountIsOpen(t *testing.T) {
     // Arrange
-    account := NewBankAccount("ACC-001")
-    account.Open(1000)
+    account := NewBankAccount(uuid.New(), "ACC-001")
+    err := account.Open(1000)
+    assert.NoError(t, err)
     
     // Act
-    err := account.Deposit(500)
+    err = account.Deposit(500)
     
     // Assert
     assert.NoError(t, err)
@@ -250,11 +260,12 @@ func TestShouldDepositMoneyWhenAccountIsOpen(t *testing.T) {
 
 func TestShouldReturnErrorWhenWithdrawingMoreThanBalance(t *testing.T) {
     // Arrange
-    account := NewBankAccount("ACC-001")
-    account.Open(1000)
+    account := NewBankAccount(uuid.New(), "ACC-001")
+    err := account.Open(1000)
+    assert.NoError(t, err)
     
     // Act
-    err := account.Withdraw(1500)
+    err = account.Withdraw(1500)
     
     // Assert
     assert.Error(t, err)
