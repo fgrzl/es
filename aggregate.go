@@ -3,6 +3,7 @@ package es
 import (
 	"context"
 	"fmt"
+	"reflect"
 
 	"github.com/fgrzl/timestamp"
 	"github.com/google/uuid"
@@ -11,6 +12,7 @@ import (
 const (
 	errRegisterHandlerTypeMismatch   = "RegisterHandler: event %T does not match expected type %T"
 	errRegisterHandlerAlreadyExists  = "RegisterHandler: handler for event %s already exists"
+	errRegisterHandlerNilType        = "RegisterHandler: event type must be concrete"
 	errNewTenantAggregateNilTenantID = "NewTenantAggregate: tenantID must not be nil"
 	errNewAggregateNilID             = "newAggregate: id cannot be nil"
 	errNewAggregateEmptySpace        = "newAggregate: space cannot be empty"
@@ -27,15 +29,29 @@ type HandlerFactory func(Aggregate) DomainEventHandler
 // The handler will be called when the event type is raised or loaded.
 // This function uses generics to provide type safety for event handlers.
 func RegisterHandler[T DomainEvent](a Aggregate, handler func(T)) {
-	var zero T
-	eventDiscriminator := zero.GetDiscriminator()
+	expectedEvent := newEventInstance[T]()
+	eventDiscriminator := expectedEvent.GetDiscriminator()
 	a.RegisterHandler(eventDiscriminator, func(event DomainEvent) {
 		e, ok := event.(T)
 		if !ok {
-			panic(fmt.Sprintf(errRegisterHandlerTypeMismatch, event, zero))
+			panic(fmt.Sprintf(errRegisterHandlerTypeMismatch, event, expectedEvent))
 		}
 		handler(e)
 	})
+}
+
+func newEventInstance[T DomainEvent]() T {
+	var zero T
+	eventType := reflect.TypeOf(zero)
+	if eventType == nil {
+		panic(errRegisterHandlerNilType)
+	}
+
+	if eventType.Kind() == reflect.Pointer {
+		return reflect.New(eventType.Elem()).Interface().(T)
+	}
+
+	return reflect.New(eventType).Elem().Interface().(T)
 }
 
 // Aggregate defines the interface for event-sourced aggregates.

@@ -223,6 +223,10 @@ const (
 
 ### Standard Errors
 
+The package exports sentinel errors that custom stores or aggregate workflows can wrap with `errors.Is`.
+The built-in in-memory store returns errors matching `ErrConcurrency` for optimistic concurrency conflicts.
+`Repository.Load` passes through store errors and does not synthesize `ErrNotFound` for empty streams.
+
 ```go
 var (
     ErrAlreadyExists        error // Aggregate already exists
@@ -317,10 +321,6 @@ if err := repo.Save(ctx, aggregate); err != nil {
 
 // Load aggregate
 if err := repo.Load(ctx, aggregate); err != nil {
-    if errors.Is(err, es.ErrNotFound) {
-        // Handle not found case
-        return nil
-    }
     return fmt.Errorf("failed to load aggregate: %w", err)
 }
 ```

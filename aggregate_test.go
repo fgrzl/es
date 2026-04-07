@@ -89,6 +89,16 @@ func TestShouldPanicWhenRegisteringDuplicateHandler(t *testing.T) {
 	})
 }
 
+func TestShouldRegisterHandlerWithoutCallingNilEventReceiver(t *testing.T) {
+	// Arrange
+	aggregate := &Dummy{Aggregate: NewAggregate(context.Background(), AreaDummy, uuid.New())}
+
+	// Act & Assert
+	assert.NotPanics(t, func() {
+		RegisterHandler(aggregate, func(event *panicOnNilDiscriminatorEvent) {})
+	})
+}
+
 func TestShouldCreateTenantAggregateWithValidTenantID(t *testing.T) {
 	// Arrange
 	tenantID := uuid.New()
@@ -120,8 +130,22 @@ type DummyCreated struct {
 	Name string
 }
 
+type panicOnNilDiscriminatorEvent struct {
+	DomainEventBase
+}
+
 func (e *DummyCreated) GetDiscriminator() string { return "dummy_created" }
 func (e *DummyCreated) GetSpaces() []string      { return []string{AreaTest, AreaDummy} }
+
+func (e *panicOnNilDiscriminatorEvent) GetDiscriminator() string {
+	if e == nil {
+		panic("nil event receiver")
+	}
+
+	return "panic_on_nil_discriminator"
+}
+
+func (e *panicOnNilDiscriminatorEvent) GetSpaces() []string { return []string{AreaDummy} }
 
 func NewDummy() *Dummy {
 	id := uuid.New()

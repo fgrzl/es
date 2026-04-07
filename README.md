@@ -189,12 +189,9 @@ tenantCat := es.NewTenantAggregate(ctx, "cats", tenantID, catID)
 
 ## Error Handling
 
-The library provides standard error types:
-- `ErrAlreadyExists`: Aggregate already exists
-- `ErrNotFound`: Aggregate not found
-- `ErrConcurrency`: Concurrency conflict detected
-- `ErrInvalidEventSpace`: Invalid event type
-- `ErrEventHandlerNotFound`: Missing event handler
+The package exports standard sentinel errors for stores and aggregate workflows.
+The built-in in-memory store returns errors matching `ErrConcurrency` for optimistic concurrency conflicts.
+`Repository.Load` passes through store errors and does not synthesize `ErrNotFound` for empty streams.
 
 ## Contributing
 

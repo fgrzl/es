@@ -3,12 +3,15 @@ package es
 import (
 	"context"
 
-	"github.com/fgrzl/telemetry"
 	"github.com/google/uuid"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 )
+
+type correlationContextKey struct{}
+
+type causationContextKey struct{}
 
 const tracerName = "github.com/fgrzl/es"
 
@@ -29,14 +32,14 @@ const (
 
 // ContextWithTracing adds correlation and causation IDs to the context.
 func ContextWithTracing(ctx context.Context, correlationID, causationID uuid.UUID) context.Context {
-	ctx = telemetry.WithCorrelationID(ctx, correlationID)
-	ctx = telemetry.WithCausationID(ctx, causationID)
+	ctx = context.WithValue(ctx, correlationContextKey{}, correlationID)
+	ctx = context.WithValue(ctx, causationContextKey{}, causationID)
 	return ctx
 }
 
 // GetCorrelationID retrieves the correlation ID from the context.
 func GetCorrelationID(ctx context.Context) uuid.UUID {
-	if correlationID, ok := telemetry.CorrelationIDFromContext(ctx); ok {
+	if correlationID, ok := ctx.Value(correlationContextKey{}).(uuid.UUID); ok {
 		return correlationID
 	}
 	return uuid.Nil
@@ -44,7 +47,7 @@ func GetCorrelationID(ctx context.Context) uuid.UUID {
 
 // GetCausationID retrieves the causation ID from the context.
 func GetCausationID(ctx context.Context) uuid.UUID {
-	if causationID, ok := telemetry.CausationIDFromContext(ctx); ok {
+	if causationID, ok := ctx.Value(causationContextKey{}).(uuid.UUID); ok {
 		return causationID
 	}
 	return uuid.Nil
