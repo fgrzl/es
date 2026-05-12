@@ -216,7 +216,6 @@ func (a *aggregateBase) applyEvent(event DomainEvent) {
 }
 
 func (a *aggregateBase) RegisterHandler(discriminator string, handler DomainEventHandler) {
-
 	if _, exists := a.handlers[discriminator]; exists {
 		panic(fmt.Sprintf(errRegisterHandlerAlreadyExists, discriminator))
 	}

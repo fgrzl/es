@@ -211,8 +211,8 @@ func TestShouldCreateSpanWhenSavingAggregate(t *testing.T) {
 	assert.Len(t, spans, 1)
 	assertRepositorySpanAttributes(t, spans[0], spanRepositorySave, dummy.GetEntity(), correlationID, causationID)
 	assertSpanInt64Attribute(t, spans[0], attributeEventsCount, int64(len(uncommitted)))
-	assertSpanInt64Attribute(t, spans[0], attributeSequenceExpected, 0)
-	assertSpanInt64Attribute(t, spans[0], attributeSequenceCurrent, 1)
+	assertSpanStringAttribute(t, spans[0], attributeSequenceExpected, "0")
+	assertSpanStringAttribute(t, spans[0], attributeSequenceCurrent, "1")
 	assert.Equal(t, codes.Unset, spans[0].Status().Code)
 	mockStore.AssertExpectations(t)
 }
@@ -300,8 +300,8 @@ func TestShouldCreateSpanWhenSaveIsNoOp(t *testing.T) {
 	assert.Len(t, spans, 1)
 	assertRepositorySpanAttributes(t, spans[0], spanRepositorySave, dummy.GetEntity(), correlationID, causationID)
 	assertSpanInt64Attribute(t, spans[0], attributeEventsCount, 0)
-	assertSpanInt64Attribute(t, spans[0], attributeSequenceExpected, 0)
-	assertSpanInt64Attribute(t, spans[0], attributeSequenceCurrent, 0)
+	assertSpanStringAttribute(t, spans[0], attributeSequenceExpected, "0")
+	assertSpanStringAttribute(t, spans[0], attributeSequenceCurrent, "0")
 	assert.Equal(t, codes.Unset, spans[0].Status().Code)
 	mockStore.AssertNotCalled(t, "SaveEvents")
 }

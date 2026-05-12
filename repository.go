@@ -2,6 +2,7 @@ package es
 
 import (
 	"context"
+	"strconv"
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
@@ -59,8 +60,8 @@ func (r *repository) Save(ctx context.Context, a Aggregate) error {
 		spanRepositorySave,
 		entity,
 		attribute.Int(attributeEventsCount, len(uncommitted)),
-		attribute.Int64(attributeSequenceExpected, int64(expectedSequence)),
-		attribute.Int64(attributeSequenceCurrent, int64(a.GetUncommittedSequence())),
+		attribute.String(attributeSequenceExpected, strconv.FormatUint(expectedSequence, 10)),
+		attribute.String(attributeSequenceCurrent, strconv.FormatUint(a.GetUncommittedSequence(), 10)),
 	)
 	defer span.End()
 
