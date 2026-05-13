@@ -17,6 +17,8 @@ Complete reference documentation for the `es` event sourcing library.
 
 The main interface for event-sourced aggregates.
 
+Note: the audit methods on `Aggregate` are part of a deliberate breaking API update in this branch. If you implement `Aggregate` outside this package, update those implementations together with the audit workflow changes.
+
 The default `aggregateBase` implementation is intentionally fail-fast for aggregate design-time mistakes. Invalid constructor inputs, duplicate handler registration, invalid handler type parameters, and invalid event-area mappings panic immediately instead of being treated as recoverable runtime errors.
 
 ```go
@@ -76,8 +78,6 @@ type DomainEvent interface {
     polymorphic.Polymorphic
     GetAggregateID() uuid.UUID
     GetArea() string
-    GetAreas() []string
-    // Deprecated: use GetAreas
     GetSpaces() []string
     GetTenantID() uuid.UUID
     GetCausationID() uuid.UUID
@@ -91,7 +91,7 @@ type DomainEvent interface {
 }
 ```
 
-**`GetArea`, `GetAreas`, and deprecated `GetSpaces`:** `GetArea()` reflects the aggregate **area** on the event’s current metadata (after `Raise` / `Repository.Save` stamping, it matches the stream’s `Entity.Area`). `GetAreas()` is the **wiring list**: every event type must return at least the aggregate area(s) where `Raise` and `Audit` are allowed; the default aggregate checks that the aggregate’s `Entity.Area` appears in that slice. `GetSpaces()` must return the same values as `GetAreas()` and exists only for backward compatibility—delegate `GetSpaces()` to `GetAreas()` on new code.
+**`GetArea`, `GetSpaces`, and preferred `GetAreas`:** `GetArea()` reflects the aggregate **area** on the event’s current metadata (after `Raise` / `Repository.Save` stamping, it matches the stream’s `Entity.Area`). `GetSpaces()` is the compatibility contract and remains the required method on `DomainEvent` for now. New event types should also implement `GetAreas()`; when present, the package prefers `GetAreas()` for wiring checks, and `GetSpaces()` should delegate to it until the next major release.
 
 ### Store
 

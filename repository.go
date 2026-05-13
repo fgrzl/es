@@ -155,17 +155,20 @@ func groupPendingAuditsByStream(ctx context.Context, r *repository, a Aggregate,
 	if len(pending) == 0 {
 		return nil, nil
 	}
+	batchesByEntity := make(map[Entity]int)
 	var batches []auditStreamBatch
 	for _, pa := range pending {
 		ent, err := r.resolveAuditEntity(ctx, a, pa)
 		if err != nil {
 			return nil, err
 		}
-		if len(batches) > 0 && batches[len(batches)-1].entity == ent {
-			batches[len(batches)-1].items = append(batches[len(batches)-1].items, pa)
-		} else {
-			batches = append(batches, auditStreamBatch{entity: ent, items: []PendingAudit{pa}})
+		if index, exists := batchesByEntity[ent]; exists {
+			batches[index].items = append(batches[index].items, pa)
+			continue
 		}
+
+		batchesByEntity[ent] = len(batches)
+		batches = append(batches, auditStreamBatch{entity: ent, items: []PendingAudit{pa}})
 	}
 	return batches, nil
 }

@@ -17,7 +17,7 @@ This folder is the **canonical guide** for the [`github.com/fgrzl/es`](https://g
 - **`Store`** — append and read events by `Entity` (stream key), with optimistic concurrency on `SaveEvents`.
 - **`Repository`** — `Load` / `Save` for one **domain** aggregate stream; `Save` also flushes **pending audits** to separate **audit batch streams** before appending domain events.
 - **`Aggregate`** — replay (`Load`), `Raise` (domain handlers + uncommitted), `Audit` (stage only; no replay into aggregate).
-- **`DomainEvent`** — polymorphic events + metadata; **`GetAreas()`** lists allowed aggregate **areas** for wiring; **`GetSpaces()`** is deprecated and should delegate to `GetAreas()`.
+- **`DomainEvent`** — polymorphic events + metadata; **`GetSpaces()`** is the compatibility contract, and new event types should also implement **`GetAreas()`** for wiring; the package prefers `GetAreas()` when present.
 
 Production **`Store` implementations** (Postgres, EventStoreDB, Kafka-backed logs, etc.) **live in your repos**, not in `es`. This module defines the **`Store` interface** and ships **`NewInMemoryEventStore`** for tests and local development only.
 
@@ -44,7 +44,7 @@ Production **`Store` implementations** (Postgres, EventStoreDB, Kafka-backed log
 
 ## Design principles (summary)
 
-- **Fail-fast wiring** — invalid aggregate ids, duplicate handlers, or events whose `GetAreas()` omit the aggregate’s `Area` surface as panics in the default implementation (design-time mistakes).
+- **Fail-fast wiring** — invalid aggregate ids, duplicate handlers, or events whose effective area list omits the aggregate’s `Area` surface as panics in the default implementation (design-time mistakes).
 - **Metadata honesty** — persisted audit rows use `EventMetadata.Entity` for the **audit batch stream** (new stream id per batch), not the business root; link subjects via correlation and payload.
 - **Replay purity** — audit volume does not affect aggregate reconstruction.
 - **Tracing** — repository operations emit OpenTelemetry spans; pass correlation/causation via `ContextWithTracing` where needed.
@@ -57,7 +57,7 @@ Production **`Store` implementations** (Postgres, EventStoreDB, Kafka-backed log
 
 ## Best practices (short)
 
-- Implement **`GetAreas()`** on every event type; keep **`GetSpaces() = GetAreas()`** until you drop deprecated API in a major version.
+- Implement **`GetAreas()`** on every event type; keep **`GetSpaces() = GetAreas()`** until you drop the compatibility path in a major version.
 - Put **subject / origin ids in audit payloads** when downstream needs them; do not overload `GetAggregateID()` on audits.
 - Treat **`Repository.Save`** as **not** one atomic transaction across audit + domain unless your `Store` implements that.
 - Test aggregates through **command methods**; use the in-memory store for unit tests.

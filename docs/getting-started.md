@@ -60,7 +60,7 @@ func (e *MoneyWithdrawn) GetAreas() []string         { return []string{"bank-acc
 func (e *MoneyWithdrawn) GetSpaces() []string        { return e.GetAreas() }
 ```
 
-Each event type implements **`GetAreas()`** for `Raise` / `Audit` wiring checks. **`GetSpaces()`** is deprecated and should return the same slice as `GetAreas()` until you drop legacy callers. After events are raised and saved, **`GetArea()`** (from `DomainEventBase`) reflects the area on stamped metadata. For audit-only facts that must not affect replay, see [Audit events](audit_events.md).
+Each event type should implement **`GetAreas()`** for `Raise` / `Audit` wiring checks. **`GetSpaces()`** remains the compatibility method required by `DomainEvent`; it should delegate to `GetAreas()` until you drop legacy callers in a major release. After events are raised and saved, **`GetArea()`** (from `DomainEventBase`) reflects the area on stamped metadata. For audit-only facts that must not affect replay, see [Audit events](audit_events.md).
 
 ## Step 2: Create Your Aggregate
 

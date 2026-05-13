@@ -188,7 +188,7 @@ Aggregate wiring is intentionally fail-fast in this library. The default aggrega
 - missing aggregate IDs or tenant IDs
 - empty aggregate areas
 - duplicate handler registration
-- event types whose `GetAreas()` do not include the aggregate area
+- event types whose effective area list does not include the aggregate area
 
 These are treated as programmer errors in aggregate design, not recoverable runtime conditions. Business-rule failures should still be returned from your command methods as ordinary `error` values.
 

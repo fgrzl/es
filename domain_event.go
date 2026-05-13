@@ -11,11 +11,8 @@ type DomainEvent interface {
 	polymorphic.Polymorphic
 	GetAggregateID() uuid.UUID
 	GetArea() string
-	// GetAreas returns aggregate area names this event type may be used with (Raise/Audit wiring).
-	GetAreas() []string
-	// GetSpaces returns the same values as GetAreas.
+	// GetSpaces returns aggregate area names this event type may be used with (Raise/Audit wiring).
 	//
-	// Deprecated: use GetAreas instead.
 	GetSpaces() []string
 	GetTenantID() uuid.UUID
 	GetCausationID() uuid.UUID
@@ -26,6 +23,18 @@ type DomainEvent interface {
 	GetSequence() uint64
 	GetTimestamp() int64
 	SetMetadata(metadata EventMetadata)
+}
+
+type areaLister interface {
+	GetAreas() []string
+}
+
+func eventAreas(event DomainEvent) []string {
+	if lister, ok := any(event).(areaLister); ok {
+		return lister.GetAreas()
+	}
+
+	return event.GetSpaces()
 }
 
 // EventMetadata contains the metadata fields common to all domain events.

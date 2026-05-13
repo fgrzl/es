@@ -16,9 +16,9 @@ const (
 	errRegisterHandlerNilType        = "RegisterHandler: event type must be concrete"
 	errNewTenantAggregateNilTenantID = "NewTenantAggregate: tenantID must not be nil"
 	errNewAggregateNilID             = "newAggregate: id cannot be nil"
-	errNewAggregateEmptySpace        = "newAggregate: space cannot be empty"
-	errRaiseInvalidAggregateSpace    = "Raise: aggregate space '%s' is not valid for event %T"
-	errAuditInvalidAggregateSpace    = "Audit: aggregate space '%s' is not valid for event %T"
+	errNewAggregateEmptyArea         = "newAggregate: area cannot be empty"
+	errRaiseInvalidAggregateArea     = "Raise: aggregate area '%s' is not valid for event %T"
+	errAuditInvalidAggregateArea     = "Audit: aggregate area '%s' is not valid for event %T"
 )
 
 // DomainEventHandler defines a function that handles a domain event.
@@ -63,6 +63,10 @@ func newEventInstance[T DomainEvent]() T {
 }
 
 // Aggregate defines the interface for event-sourced aggregates.
+//
+// Note: the audit methods on this interface are a deliberate breaking API change
+// in this branch; external aggregate implementations must be updated together
+// with the audit workflow changes.
 // Aggregates are the primary building blocks of event sourcing, representing
 // business entities that generate and respond to domain events.
 //
@@ -94,7 +98,7 @@ type Aggregate interface {
 	Load([]DomainEvent) error
 	Commit()
 
-	// PendingAudits returns a copy of staged audit events (metadata is applied on Repository.Save).
+	// GetPendingAudits returns a copy of staged audit events (metadata is applied on Repository.Save).
 	GetPendingAudits() []PendingAudit
 	// DiscardPendingAudits clears staged audits. The repository calls this after
 	// those audits have been persisted successfully (or use TrimPendingAudits incrementally).
@@ -136,7 +140,7 @@ func newAggregate(ctx context.Context, scope Scope, area string, tenantID, id uu
 		panic(errNewAggregateNilID)
 	}
 	if area == "" {
-		panic(errNewAggregateEmptySpace)
+		panic(errNewAggregateEmptyArea)
 	}
 
 	entity := Entity{
@@ -187,8 +191,13 @@ func (a *aggregateBase) GetAggregateID() uuid.UUID {
 	return a.entity.ID
 }
 
-func (a *aggregateBase) GetAggregateSpace() string {
+func (a *aggregateBase) GetAggregateArea() string {
 	return a.entity.Area
+}
+
+// GetAggregateSpace is deprecated. Use GetAggregateArea.
+func (a *aggregateBase) GetAggregateSpace() string {
+	return a.GetAggregateArea()
 }
 
 func (a *aggregateBase) GetCorrelationID() uuid.UUID {
@@ -271,8 +280,8 @@ func (a *aggregateBase) RegisterHandler(discriminator string, handler DomainEven
 // are treated as design-time wiring errors.
 func (a *aggregateBase) Raise(event DomainEvent) error {
 	domainArea := a.entity.Area
-	if !eventListsSpace(event, domainArea) {
-		panic(fmt.Sprintf(errRaiseInvalidAggregateSpace, domainArea, event))
+	if !eventListsArea(event, domainArea) {
+		panic(fmt.Sprintf(errRaiseInvalidAggregateArea, domainArea, event))
 	}
 
 	event.SetMetadata(EventMetadata{
@@ -296,8 +305,11 @@ func (a *aggregateBase) Raise(event DomainEvent) error {
 // The event's GetAreas() must include the domain aggregate area.
 func (a *aggregateBase) Audit(event DomainEvent) error {
 	domainArea := a.entity.Area
-	if !eventListsSpace(event, domainArea) {
-		panic(fmt.Sprintf(errAuditInvalidAggregateSpace, domainArea, event))
+	if !eventListsArea(event, domainArea) {
+		panic(fmt.Sprintf(errAuditInvalidAggregateArea, domainArea, event))
+	}
+	if eventAlreadyStaged(a.pendingAudits, event) {
+		panic("Audit: event instance must not be staged more than once")
 	}
 
 	auditEntity := AuditStreamEntity(a.entity)
@@ -313,12 +325,41 @@ func (a *aggregateBase) Audit(event DomainEvent) error {
 	return nil
 }
 
-func eventListsSpace(event DomainEvent, area string) bool {
-	for _, s := range event.GetAreas() {
-		if s == area {
+func eventListsArea(event DomainEvent, area string) bool {
+	for _, candidate := range eventAreas(event) {
+		if candidate == area {
 			return true
 		}
 	}
+	return false
+}
+
+func eventAlreadyStaged(pending []PendingAudit, event DomainEvent) bool {
+	if event == nil {
+		return false
+	}
+
+	eventValue := reflect.ValueOf(event)
+	if eventValue.Kind() != reflect.Pointer || eventValue.IsNil() {
+		return false
+	}
+
+	eventPtr := eventValue.Pointer()
+	for _, staged := range pending {
+		if staged.Event == nil {
+			continue
+		}
+
+		stagedValue := reflect.ValueOf(staged.Event)
+		if stagedValue.Kind() != reflect.Pointer || stagedValue.IsNil() {
+			continue
+		}
+
+		if stagedValue.Pointer() == eventPtr {
+			return true
+		}
+	}
+
 	return false
 }
 

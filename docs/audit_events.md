@@ -26,7 +26,7 @@ Pre-assigning identity fields preserves **causal ordering**, **stable references
 
 Audits are **not** appended to the originating aggregate’s `Entity` (`ID` = business root). Each **pending audit batch** is persisted as its own **short-lived stream** (append partition):
 
-- **`Area`**, **`TenantID`**, and **`Scope`** match the source aggregate (same type space / tenancy as the command).
+- **`Area`**, **`TenantID`**, and **`Scope`** match the source aggregate (same area and tenancy as the command).
 - **`ID`** is a **new UUID** (`uuid.New()`), created when the first `Audit()` runs after the previous batch was flushed (see `AuditStreamEntity` in `entity.go` and `aggregateBase.Audit` in `aggregate.go`).
 - Multiple `Audit()` calls before the next successful `Save()` share **one** batch stream `Entity` (one stream id).
 
