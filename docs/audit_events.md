@@ -52,7 +52,7 @@ Treat persisted audits as **observational facts about what was attempted or obse
 The library does not ship database or cloud **`Store`** implementations—only the interface and an in-memory implementation for tests. Your adapter is responsible for append semantics and concurrency per stream. See the **Implementing `Store` outside this module** section in [api-reference.md](api-reference.md).
 
 1. **Snapshot** pending audits (`GetPendingAudits()`).
-2. **Group** staged items by resolved stream `Entity` (default: `PendingAudit.Entity`; with `WithAuditRouter`, see below).
+2. **Group** staged items by stream `Entity`.
 3. For each batch, in order:
    - Stamp `EventMetadata` with `Entity =` that batch’s stream `Entity`, sequences `1..n` within the batch, plus correlation/causation and the staged `EventID` / `Timestamp`.
    - **`SaveEvents(ctx, auditEntity, events, expectedSequence=0)`** — no prior `LoadEvents` on the audit stream; each batch stream starts empty.
@@ -61,16 +61,6 @@ The library does not ship database or cloud **`Store`** implementations—only t
 5. On full success: **`Commit()`** (domain) and **`DiscardPendingAudits()`** (clears any remainder).
 
 There is **no** cross-stream transaction in the default `Store` API unless your implementation provides one.
-
-## Optional routing: `WithAuditRouter`
-
-`NewRepository(store, es.WithAuditRouter(fn))` supplies an `AuditRouter`:
-
-```go
-func(ctx context.Context, agg Aggregate, event DomainEvent) (Entity, error)
-```
-
-**Infrastructure owns topology** (where batches land); **aggregates own behavior** (what gets staged). When the router is set, it **replaces** the default batch `Entity` carried on `PendingAudit` for grouping and persistence. When unset, persistence uses the `Entity` assigned at `Audit()` time.
 
 ## Consumers: “like a domain event”
 
@@ -112,6 +102,6 @@ For indexing, retention, warehousing, subscriptions, and export pipelines, some 
 ## Related code
 
 - `aggregate.go` — `Audit`, `PendingAudit`, `GetPendingAudits`, `TrimPendingAudits`, `DiscardPendingAudits`
-- `repository.go` — `Save`, `AuditRouter`, `WithAuditRouter`, batch grouping
+- `repository.go` — `Save`, batch grouping
 - `entity.go` — `AuditStreamEntity`
 - `tracing.go` — `es.repository.save_audit` span name

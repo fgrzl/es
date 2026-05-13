@@ -298,8 +298,8 @@ func (a *aggregateBase) Raise(event DomainEvent) error {
 	return nil
 }
 
-// Audit stages an immutable audit fact for a derived batch stream (see AuditStreamEntity)
-// or for a stream resolved by Repository WithAuditRouter. It does not run domain handlers,
+// Audit stages an immutable audit fact for a derived batch stream (see AuditStreamEntity).
+// It does not run domain handlers,
 // does not append to uncommitted events, and is never replayed by Load.
 //
 // The event's GetAreas() must include the domain aggregate area.

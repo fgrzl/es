@@ -52,7 +52,7 @@ type Aggregate interface {
 }
 ```
 
-**`Raise` vs `Audit`:** `Raise` validates `GetAreas()`, stamps metadata for the aggregate’s domain `Entity`, runs registered handlers, and appends to uncommitted events (replayed by `Load`). `Audit` validates that `GetAreas()` includes the domain area, does **not** run handlers, and stages events for an **audit batch stream** only. `Repository.Save` persists pending audits to that stream (or a custom `AuditRouter` target) **before** domain uncommitted events. Persisted audit rows use `EventMetadata.Entity` equal to that **audit batch stream** (new stream `ID`, same `Area` / tenant / scope as the source), so `GetAggregateID()` on an audit event is the batch stream id, not the originating aggregate’s id; tie back to the command or subject using correlation/causation and event payload. `Load` only reads the domain stream; audit streams are never hydrated into the aggregate. See [audit_events.md](audit_events.md) for semantics and philosophy.
+**`Raise` vs `Audit`:** `Raise` validates `GetAreas()`, stamps metadata for the aggregate’s domain `Entity`, runs registered handlers, and appends to uncommitted events (replayed by `Load`). `Audit` validates that `GetAreas()` includes the domain area, does **not** run handlers, and stages events for an **audit batch stream** only. `Repository.Save` persists pending audits to that stream **before** domain uncommitted events. Persisted audit rows use `EventMetadata.Entity` equal to that **audit batch stream** (new stream `ID`, same `Area` / tenant / scope as the source), so `GetAggregateID()` on an audit event is the batch stream id, not the originating aggregate’s id; tie back to the command or subject using correlation/causation and event payload. `Load` only reads the domain stream; audit streams are never hydrated into the aggregate. See [audit_events.md](audit_events.md) for semantics and philosophy.
 
 **`TrimPendingAudits`:** Used internally by `Repository.Save` after each successful audit batch so a later domain failure does not duplicate already-persisted audits on retry. Callers should not need it unless building alternative persistence tooling.
 
@@ -121,13 +121,7 @@ type Repository interface {
     Load(context.Context, Aggregate) error
     Save(context.Context, Aggregate) error
 }
-
-func WithAuditRouter(router AuditRouter) RepositoryOption
-
-type AuditRouter func(ctx context.Context, agg Aggregate, event DomainEvent) (Entity, error)
 ```
-
-`RepositoryOption` is a functional option type accepted by `NewRepository` (for example `WithAuditRouter`).
 
 **Save ordering:** Pending audits are written first (each distinct audit batch `Entity` in order) with `expectedSequence = 0`, then domain uncommitted events. This is not a single cross-stream transaction unless your `Store` implementation provides one. If the domain write fails after audits succeeded, pending audits have already been trimmed from the aggregate; retrying `Save` persists only the domain batch.
 
@@ -186,7 +180,6 @@ func NewRepository(store Store, opts ...RepositoryOption) Repository
 
 **Options:**
 
-- `WithAuditRouter(router)` — supply a custom resolver for audit stream `Entity` values. When omitted, audits use the derived batch `Entity` assigned by `Aggregate.Audit`.
 
 ### NewInMemoryEventStore
 

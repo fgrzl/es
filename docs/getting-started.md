@@ -185,7 +185,7 @@ import (
 func main() {
     // In-memory store is for tests and local dev; production Store implementations live in your repo.
     store := es.NewInMemoryEventStore()
-    repo := es.NewRepository(store) // optional: es.WithAuditRouter(...) — see API reference
+    repo := es.NewRepository(store)
     
     // Create a new bank account
     aggregateID := uuid.New()

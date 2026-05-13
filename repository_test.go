@@ -326,26 +326,6 @@ func TestShouldSavePendingAuditsWithoutDomainUncommitted(t *testing.T) {
 	assert.Len(t, dummy.GetPendingAudits(), 0)
 }
 
-func TestShouldReturnAuditRouterErrorBeforeWriting(t *testing.T) {
-	ctx := context.Background()
-	store := NewInMemoryEventStore()
-	routerErr := errors.New("routing failed")
-	repo := NewRepository(store, WithAuditRouter(func(ctx context.Context, agg Aggregate, event DomainEvent) (Entity, error) {
-		return Entity{}, routerErr
-	}))
-	dummy := NewDummy()
-	_ = dummy.LogAudit("x")
-
-	err := repo.Save(ctx, dummy)
-	assert.ErrorIs(t, err, routerErr)
-
-	auditEntity := dummy.GetPendingAudits()[0].Entity
-	auditEvents, err := store.LoadEvents(ctx, auditEntity, 0)
-	assert.NoError(t, err)
-	assert.Len(t, auditEvents, 0)
-	assert.Len(t, dummy.GetPendingAudits(), 1)
-}
-
 func TestShouldTrimPendingAuditsWhenDomainSaveFailsAfterAuditPersisted(t *testing.T) {
 	mockStore := new(MockStore)
 	repo := NewRepository(mockStore)
