@@ -2,11 +2,22 @@
 
 Complete reference documentation for the `es` event sourcing library.
 
+## Documentation map
+
+| Topic | Where |
+|-------|--------|
+| Hub (overview, diagrams, principles) | [docs/README.md](README.md) |
+| Tutorial-style walkthrough | [getting-started.md](getting-started.md) |
+| Audit batch streams, save order, philosophy | [audit_events.md](audit_events.md) |
+| This file | Types, interfaces, snippets |
+
 ## Core Interfaces
 
 ### Aggregate
 
 The main interface for event-sourced aggregates.
+
+Note: the audit methods on `Aggregate` are part of a deliberate breaking API update in this branch. If you implement `Aggregate` outside this package, update those implementations together with the audit workflow changes.
 
 The default `aggregateBase` implementation is intentionally fail-fast for aggregate design-time mistakes. Invalid constructor inputs, duplicate handler registration, invalid handler type parameters, and invalid event-area mappings panic immediately instead of being treated as recoverable runtime errors.
 
@@ -31,10 +42,32 @@ type Aggregate interface {
     // Event behavior
     RegisterHandler(string, DomainEventHandler)
     Raise(DomainEvent) error
+    Audit(DomainEvent) error
     Load([]DomainEvent) error
     Commit()
+
+    GetPendingAudits() []PendingAudit
+    DiscardPendingAudits()
+    TrimPendingAudits(n int)
 }
 ```
+
+**`Raise` vs `Audit`:** `Raise` validates `GetAreas()`, stamps metadata for the aggregate’s domain `Entity`, runs registered handlers, and appends to uncommitted events (replayed by `Load`). `Audit` validates that `GetAreas()` includes the domain area, does **not** run handlers, and stages events for an **audit batch stream** only. `Repository.Save` persists pending audits to that stream **before** domain uncommitted events. Persisted audit rows use `EventMetadata.Entity` equal to that **audit batch stream** (new stream `ID`, same `Area` / tenant / scope as the source), so `GetAggregateID()` on an audit event is the batch stream id, not the originating aggregate’s id; tie back to the command or subject using correlation/causation and event payload. `Load` only reads the domain stream; audit streams are never hydrated into the aggregate. See [audit_events.md](audit_events.md) for semantics and philosophy.
+
+**`TrimPendingAudits`:** Used internally by `Repository.Save` after each successful audit batch so a later domain failure does not duplicate already-persisted audits on retry. Callers should not need it unless building alternative persistence tooling.
+
+### PendingAudit
+
+```go
+type PendingAudit struct {
+    Event     DomainEvent
+    Entity    Entity
+    EventID   uuid.UUID
+    Timestamp int64
+}
+```
+
+Staged audit payload and identifiers assigned at `Audit()` time. `Entity` is the **audit batch stream**: a fresh UUID with the source aggregate’s `Area`, `TenantID`, and `Scope`. After `Repository.Save`, each audit event’s `EventMetadata.Entity` matches that stream (not the originating aggregate’s id). Full `EventMetadata` (including per-batch `Sequence`) is applied inside `Repository.Save`.
 
 ### DomainEvent
 
@@ -58,6 +91,8 @@ type DomainEvent interface {
 }
 ```
 
+**`GetArea`, `GetSpaces`, and preferred `GetAreas`:** `GetArea()` reflects the aggregate **area** on the event’s current metadata (after `Raise` / `Repository.Save` stamping, it matches the stream’s `Entity.Area`). `GetSpaces()` is the compatibility contract and remains the required method on `DomainEvent` for now. New event types should also implement `GetAreas()`; when present, the package prefers `GetAreas()` for wiring checks, and `GetSpaces()` should delegate to it until the next major release.
+
 ### Store
 
 Interface for event persistence.
@@ -69,11 +104,17 @@ type Store interface {
 }
 ```
 
+**Implementing `Store` outside this module:** Production adapters (SQL, EventStoreDB, cloud logs, etc.) belong in **your** codebase or infrastructure libraries, not in `es`. The contract callers rely on:
+
+- **`SaveEvents`** — append-only semantics for the given `Entity` (stream key); `expectedSequence` is the number of events already committed on that stream before this append (the in-memory store rejects gaps or mismatches with `ErrConcurrency`).
+- **Audit batch streams** — each new batch stream is written with `expectedSequence == 0` (empty stream). Domain streams use `expectedSequence ==` committed length as today.
+- **Cross-stream atomicity** — the `Store` interface does not require a transaction across different `Entity` values; `Repository.Save` calls `SaveEvents` multiple times when audits and domain events are both present unless your store layers a unit of work on top.
+
 ### Repository
 
 High-level interface for aggregate operations.
 
-Repository implementations emit OpenTelemetry spans for `Load` and `Save` operations. The spans include aggregate identity attributes, scope information, correlation and causation IDs when present in the incoming context, and event or sequence counts relevant to the operation.
+Repository implementations emit OpenTelemetry spans for `Load` and `Save` operations. The spans include aggregate identity attributes, scope information, correlation and causation IDs when present in the incoming context, and event or sequence counts relevant to the operation. `Save` also emits `es.repository.save_audit` child spans per audit stream batch.
 
 ```go
 type Repository interface {
@@ -81,6 +122,16 @@ type Repository interface {
     Save(context.Context, Aggregate) error
 }
 ```
+
+**Save ordering:** Pending audits are written first (each distinct audit batch `Entity` in order) with `expectedSequence = 0`, then domain uncommitted events. This is not a single cross-stream transaction unless your `Store` implementation provides one. If the domain write fails after audits succeeded, pending audits have already been trimmed from the aggregate; retrying `Save` persists only the domain batch.
+
+### AuditStreamEntity
+
+```go
+func AuditStreamEntity(domain Entity) Entity
+```
+
+Returns a new **audit batch stream** identity: fresh `ID`, same `Area`, `TenantID`, and `Scope` as the domain aggregate. `Aggregate.Audit` assigns one batch stream per pending audit batch and `Repository.Save` writes that batch with `expectedSequence = 0`.
 
 ## Factory Functions
 
@@ -121,11 +172,14 @@ Typical panic conditions are a nil tenant ID, a nil aggregate ID, or an empty ar
 
 ### NewRepository
 
-Creates a new repository with the given event store.
+Creates a new repository with the given event store and optional configuration.
 
 ```go
-func NewRepository(store Store) Repository
+func NewRepository(store Store, opts ...RepositoryOption) Repository
 ```
+
+**Options:**
+
 
 ### NewInMemoryEventStore
 
@@ -170,6 +224,14 @@ Creates a new context with tracing information from a domain event.
 
 ```go
 func WithEventMetadata(ctx context.Context, event DomainEvent) context.Context
+```
+
+### ContextWithTracing
+
+Attaches correlation and causation UUIDs to a context. Repository spans read these values when present (see `GetCorrelationID` / `GetCausationID` in `tracing.go`).
+
+```go
+func ContextWithTracing(ctx context.Context, correlationID, causationID uuid.UUID) context.Context
 ```
 
 ## Types
@@ -284,7 +346,7 @@ func NewTenantEntity(tenantID, id uuid.UUID, area string) Entity
 
 ### NewTenantEntityInArea
 
-Creates a new tenant-scoped entity with a generated ID.
+Creates a new tenant-scoped entity with a generated entity ID in the specified area. Use `NewTenantEntity` when you need to supply the entity id yourself.
 
 ```go
 func NewTenantEntityInArea(tenantID, id uuid.UUID, area string) Entity
@@ -322,7 +384,13 @@ func (a *MyAggregate) DoSomething(param string) error {
     if param == "" {
         return errors.New("param cannot be empty")
     }
-    
+
+    // Optional: stage audit on a derived batch stream. GetAreas on audit events
+    // must include the domain area.
+    if err := a.Audit(&SomethingAudited{Param: param}); err != nil {
+        return err
+    }
+
     // Raise domain event
     return a.Raise(&SomethingDone{Param: param})
 }

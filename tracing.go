@@ -16,18 +16,20 @@ type causationContextKey struct{}
 const tracerName = "github.com/fgrzl/es"
 
 const (
-	spanRepositoryLoad = "es.repository.load"
-	spanRepositorySave = "es.repository.save"
+	spanRepositoryLoad      = "es.repository.load"
+	spanRepositorySave      = "es.repository.save"
+	spanRepositorySaveAudit = "es.repository.save_audit"
 
-	attributeEntityID         = "es.entity.id"
-	attributeEntityArea       = "es.entity.area"
-	attributeEntityScope      = "es.entity.scope"
-	attributeEntityTenantID   = "es.entity.tenant_id"
-	attributeCorrelationID    = "es.correlation_id"
-	attributeCausationID      = "es.causation_id"
-	attributeEventsCount      = "es.events.count"
-	attributeSequenceExpected = "es.sequence.expected"
-	attributeSequenceCurrent  = "es.sequence.current"
+	attributeEntityID          = "es.entity.id"
+	attributeEntityArea        = "es.entity.area"
+	attributeEntityScope       = "es.entity.scope"
+	attributeEntityTenantID    = "es.entity.tenant_id"
+	attributeCorrelationID     = "es.correlation_id"
+	attributeCausationID       = "es.causation_id"
+	attributeEventsCount       = "es.events.count"
+	attributePendingAuditCount = "es.pending_audits.count"
+	attributeSequenceExpected  = "es.sequence.expected"
+	attributeSequenceCurrent   = "es.sequence.current"
 )
 
 // ContextWithTracing adds correlation and causation IDs to the context.

@@ -146,6 +146,72 @@ func TestShouldPanicWhenRaisingEventWithInvalidArea(t *testing.T) {
 	assert.Len(t, dummy.GetUncommittedEvents(), 0)
 }
 
+func TestShouldPanicWhenAuditingWithInvalidArea(t *testing.T) {
+	// Arrange
+	dummy := NewDummy()
+
+	// Act & Assert
+	assert.Panics(t, func() {
+		_ = dummy.Audit(&WrongAreaDummyCreated{})
+	})
+	assert.Len(t, dummy.GetPendingAudits(), 0)
+}
+
+func TestShouldStageAuditWithoutRunningDomainHandlers(t *testing.T) {
+	// Arrange
+	dummy := NewDummy()
+
+	// Act
+	err := dummy.Audit(&DummyAuditLogged{Reason: "login"})
+
+	// Assert
+	assert.NoError(t, err)
+	assert.Empty(t, dummy.GetUncommittedEvents())
+	assert.Len(t, dummy.GetPendingAudits(), 1)
+	assert.Equal(t, "", dummy.name)
+}
+
+func TestShouldReturnIndependentPendingAuditCopies(t *testing.T) {
+	// Arrange
+	dummy := NewDummy()
+	_ = dummy.Audit(&DummyAuditLogged{Reason: "a"})
+
+	// Act
+	first := dummy.GetPendingAudits()
+	assert.Len(t, first, 1)
+	first = append(first, PendingAudit{EventID: uuid.New()})
+
+	// Assert
+	assert.Len(t, first, 2)
+	assert.Len(t, dummy.GetPendingAudits(), 1)
+}
+
+func TestShouldReuseAuditBatchUntilDiscarded(t *testing.T) {
+	// Arrange
+	dummy := NewDummy()
+	_ = dummy.LogAudit("one")
+	_ = dummy.LogAudit("two")
+
+	// Act
+	pending := dummy.GetPendingAudits()
+
+	// Assert
+	assert.Len(t, pending, 2)
+	assert.Equal(t, pending[0].Entity, pending[1].Entity)
+	assert.NotEqual(t, uuid.Nil, pending[0].Entity.ID)
+	assert.NotEqual(t, dummy.GetEntity().ID, pending[0].Entity.ID)
+	assert.Equal(t, dummy.GetEntity().Area, pending[0].Entity.Area)
+
+	firstBatchID := pending[0].Entity.ID
+	dummy.DiscardPendingAudits()
+	_ = dummy.LogAudit("three")
+
+	next := dummy.GetPendingAudits()
+	assert.Len(t, next, 1)
+	assert.NotEqual(t, firstBatchID, next[0].Entity.ID)
+	assert.Equal(t, dummy.GetEntity().Area, next[0].Entity.Area)
+}
+
 type DummyCreated struct {
 	DomainEventBase
 	Name string
@@ -160,7 +226,8 @@ type WrongAreaDummyCreated struct {
 }
 
 func (e *DummyCreated) GetDiscriminator() string { return "dummy_created" }
-func (e *DummyCreated) GetSpaces() []string      { return []string{AreaTest, AreaDummy} }
+func (e *DummyCreated) GetAreas() []string       { return []string{AreaTest, AreaDummy} }
+func (e *DummyCreated) GetSpaces() []string      { return e.GetAreas() }
 
 func (e *panicOnNilDiscriminatorEvent) GetDiscriminator() string {
 	if e == nil {
@@ -170,10 +237,23 @@ func (e *panicOnNilDiscriminatorEvent) GetDiscriminator() string {
 	return "panic_on_nil_discriminator"
 }
 
-func (e *panicOnNilDiscriminatorEvent) GetSpaces() []string { return []string{AreaDummy} }
+func (e *panicOnNilDiscriminatorEvent) GetAreas() []string { return []string{AreaDummy} }
+func (e *panicOnNilDiscriminatorEvent) GetSpaces() []string {
+	return e.GetAreas()
+}
 
 func (e *WrongAreaDummyCreated) GetDiscriminator() string { return "wrong_area_dummy_created" }
-func (e *WrongAreaDummyCreated) GetSpaces() []string      { return []string{AreaTest} }
+func (e *WrongAreaDummyCreated) GetAreas() []string       { return []string{AreaTest} }
+func (e *WrongAreaDummyCreated) GetSpaces() []string      { return e.GetAreas() }
+
+type DummyAuditLogged struct {
+	DomainEventBase
+	Reason string
+}
+
+func (e *DummyAuditLogged) GetDiscriminator() string { return "dummy_audit_logged" }
+func (e *DummyAuditLogged) GetAreas() []string       { return []string{AreaDummy} }
+func (e *DummyAuditLogged) GetSpaces() []string      { return e.GetAreas() }
 
 func NewDummy() *Dummy {
 	id := uuid.New()
@@ -192,6 +272,10 @@ func (a *Dummy) Create(name string) error {
 		return a.Raise(&DummyCreated{Name: name})
 	}
 	return nil
+}
+
+func (a *Dummy) LogAudit(reason string) error {
+	return a.Audit(&DummyAuditLogged{Reason: reason})
 }
 
 func (a *Dummy) OnDummyCreated(e *DummyCreated) {
