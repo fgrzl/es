@@ -282,6 +282,7 @@ func TestShouldRecordSpanErrorWhenSaveFails(t *testing.T) {
 }
 
 func TestShouldPersistAuditsBeforeDomainStream(t *testing.T) {
+	// Arrange
 	ctx := context.Background()
 	store := NewInMemoryEventStore()
 	repo := NewRepository(store)
@@ -290,7 +291,10 @@ func TestShouldPersistAuditsBeforeDomainStream(t *testing.T) {
 	_ = dummy.Create("alice")
 	auditEntity := dummy.GetPendingAudits()[0].Entity
 
+	// Act
 	err := repo.Save(ctx, dummy)
+
+	// Assert
 	assert.NoError(t, err)
 
 	auditEvents, err := store.LoadEvents(ctx, auditEntity, 0)
@@ -307,6 +311,7 @@ func TestShouldPersistAuditsBeforeDomainStream(t *testing.T) {
 }
 
 func TestShouldSavePendingAuditsWithoutDomainUncommitted(t *testing.T) {
+	// Arrange
 	ctx := context.Background()
 	store := NewInMemoryEventStore()
 	repo := NewRepository(store)
@@ -314,7 +319,10 @@ func TestShouldSavePendingAuditsWithoutDomainUncommitted(t *testing.T) {
 	_ = dummy.LogAudit("peek")
 	auditEntity := dummy.GetPendingAudits()[0].Entity
 
+	// Act
 	err := repo.Save(ctx, dummy)
+
+	// Assert
 	assert.NoError(t, err)
 
 	auditEvents, err := store.LoadEvents(ctx, auditEntity, 0)
@@ -327,6 +335,7 @@ func TestShouldSavePendingAuditsWithoutDomainUncommitted(t *testing.T) {
 }
 
 func TestShouldTrimPendingAuditsWhenDomainSaveFailsAfterAuditPersisted(t *testing.T) {
+	// Arrange
 	mockStore := new(MockStore)
 	repo := NewRepository(mockStore)
 	dummy := NewDummy()
@@ -338,7 +347,10 @@ func TestShouldTrimPendingAuditsWhenDomainSaveFailsAfterAuditPersisted(t *testin
 	domainFail := errors.New("domain failed")
 	mockStore.On("SaveEvents", mock.Anything, dummy.GetEntity(), mock.Anything, uint64(0)).Return(domainFail).Once()
 
+	// Act
 	err := repo.Save(context.Background(), dummy)
+
+	// Assert
 	assert.ErrorIs(t, err, domainFail)
 	assert.Len(t, dummy.GetPendingAudits(), 0)
 	mockStore.AssertExpectations(t)

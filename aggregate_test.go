@@ -147,8 +147,10 @@ func TestShouldPanicWhenRaisingEventWithInvalidArea(t *testing.T) {
 }
 
 func TestShouldPanicWhenAuditingWithInvalidArea(t *testing.T) {
+	// Arrange
 	dummy := NewDummy()
 
+	// Act & Assert
 	assert.Panics(t, func() {
 		_ = dummy.Audit(&WrongAreaDummyCreated{})
 	})
@@ -156,10 +158,13 @@ func TestShouldPanicWhenAuditingWithInvalidArea(t *testing.T) {
 }
 
 func TestShouldStageAuditWithoutRunningDomainHandlers(t *testing.T) {
+	// Arrange
 	dummy := NewDummy()
 
+	// Act
 	err := dummy.Audit(&DummyAuditLogged{Reason: "login"})
 
+	// Assert
 	assert.NoError(t, err)
 	assert.Empty(t, dummy.GetUncommittedEvents())
 	assert.Len(t, dummy.GetPendingAudits(), 1)
@@ -167,22 +172,30 @@ func TestShouldStageAuditWithoutRunningDomainHandlers(t *testing.T) {
 }
 
 func TestShouldReturnIndependentPendingAuditCopies(t *testing.T) {
+	// Arrange
 	dummy := NewDummy()
 	_ = dummy.Audit(&DummyAuditLogged{Reason: "a"})
 
+	// Act
 	first := dummy.GetPendingAudits()
 	assert.Len(t, first, 1)
 	first = append(first, PendingAudit{EventID: uuid.New()})
+
+	// Assert
 	assert.Len(t, first, 2)
 	assert.Len(t, dummy.GetPendingAudits(), 1)
 }
 
 func TestShouldReuseAuditBatchUntilDiscarded(t *testing.T) {
+	// Arrange
 	dummy := NewDummy()
 	_ = dummy.LogAudit("one")
 	_ = dummy.LogAudit("two")
 
+	// Act
 	pending := dummy.GetPendingAudits()
+
+	// Assert
 	assert.Len(t, pending, 2)
 	assert.Equal(t, pending[0].Entity, pending[1].Entity)
 	assert.NotEqual(t, uuid.Nil, pending[0].Entity.ID)
