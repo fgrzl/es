@@ -11,6 +11,11 @@ type DomainEvent interface {
 	polymorphic.Polymorphic
 	GetAggregateID() uuid.UUID
 	GetArea() string
+	// GetAreas returns aggregate area names this event type may be used with (Raise/Audit wiring).
+	GetAreas() []string
+	// GetSpaces returns the same values as GetAreas.
+	//
+	// Deprecated: use GetAreas instead.
 	GetSpaces() []string
 	GetTenantID() uuid.UUID
 	GetCausationID() uuid.UUID

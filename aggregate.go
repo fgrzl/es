@@ -18,6 +18,7 @@ const (
 	errNewAggregateNilID             = "newAggregate: id cannot be nil"
 	errNewAggregateEmptySpace        = "newAggregate: space cannot be empty"
 	errRaiseInvalidAggregateSpace    = "Raise: aggregate space '%s' is not valid for event %T"
+	errAuditInvalidAggregateSpace    = "Audit: aggregate space '%s' is not valid for event %T"
 )
 
 // DomainEventHandler defines a function that handles a domain event.
@@ -27,7 +28,7 @@ type DomainEventHandler func(DomainEvent)
 type HandlerFactory func(Aggregate) DomainEventHandler
 
 // RegisterHandler registers a typed event handler for a specific event type on an aggregate.
-// The handler will be called when the event type is raised or loaded.
+// The handler will be called when the event type is raised or loaded, but not for Audit.
 // This function panics on invalid aggregate wiring such as nil handlers,
 // duplicate handlers, or invalid event type parameters.
 func RegisterHandler[T DomainEvent](a Aggregate, handler func(T)) {
@@ -89,8 +90,27 @@ type Aggregate interface {
 	// Event behavior
 	RegisterHandler(string, DomainEventHandler)
 	Raise(DomainEvent) error
+	Audit(DomainEvent) error
 	Load([]DomainEvent) error
 	Commit()
+
+	// PendingAudits returns a copy of staged audit events (metadata is applied on Repository.Save).
+	GetPendingAudits() []PendingAudit
+	// DiscardPendingAudits clears staged audits. The repository calls this after
+	// those audits have been persisted successfully (or use TrimPendingAudits incrementally).
+	DiscardPendingAudits()
+	// TrimPendingAudits removes the first n staged audits. Repository.Save calls this
+	// after each successful audit batch; application code should not use it.
+	TrimPendingAudits(n int)
+}
+
+// PendingAudit is an audit event staged on the aggregate before Repository.Save.
+// Event metadata is filled when the repository persists to the audit stream.
+type PendingAudit struct {
+	Event     DomainEvent
+	Entity    Entity
+	EventID   uuid.UUID
+	Timestamp int64
 }
 
 // NewAggregate creates a new global-scoped aggregate with the specified area and ID.
@@ -155,6 +175,7 @@ type aggregateBase struct {
 	causationID   uuid.UUID
 	committed     []DomainEvent
 	uncommitted   []DomainEvent
+	pendingAudits []PendingAudit
 	handlers      map[string]DomainEventHandler
 }
 
@@ -207,6 +228,26 @@ func (a *aggregateBase) Commit() {
 	a.uncommitted = make([]DomainEvent, 0)
 }
 
+func (a *aggregateBase) GetPendingAudits() []PendingAudit {
+	out := make([]PendingAudit, len(a.pendingAudits))
+	copy(out, a.pendingAudits)
+	return out
+}
+
+func (a *aggregateBase) DiscardPendingAudits() {
+	a.pendingAudits = nil
+}
+
+func (a *aggregateBase) TrimPendingAudits(n int) {
+	if n <= 0 {
+		return
+	}
+	if n > len(a.pendingAudits) {
+		n = len(a.pendingAudits)
+	}
+	a.pendingAudits = a.pendingAudits[n:]
+}
+
 // ApplyEvent provides default behavior - overridden by concrete types
 func (a *aggregateBase) applyEvent(event DomainEvent) {
 	eventName := event.GetDiscriminator()
@@ -229,7 +270,11 @@ func (a *aggregateBase) RegisterHandler(discriminator string, handler DomainEven
 // definition is not valid for the aggregate because invalid event-area mappings
 // are treated as design-time wiring errors.
 func (a *aggregateBase) Raise(event DomainEvent) error {
-	// Set event metadata
+	domainArea := a.entity.Area
+	if !eventListsSpace(event, domainArea) {
+		panic(fmt.Sprintf(errRaiseInvalidAggregateSpace, domainArea, event))
+	}
+
 	event.SetMetadata(EventMetadata{
 		Entity:        a.GetEntity(),
 		EventID:       uuid.New(),
@@ -239,24 +284,42 @@ func (a *aggregateBase) Raise(event DomainEvent) error {
 		Sequence:      a.GetUncommittedSequence() + 1,
 	})
 
-	// Validate aggregate space
-	validSpaces := event.GetSpaces()
-	aggregateSpace := event.GetArea()
-	isValid := false
-	for _, space := range validSpaces {
-		if space == aggregateSpace {
-			isValid = true
-			break
-		}
-	}
-	if !isValid {
-		panic(fmt.Sprintf(errRaiseInvalidAggregateSpace, aggregateSpace, event))
-	}
-
-	// Apply event and append to uncommitted
 	a.applyEvent(event)
 	a.AppendUncommitted(event)
 	return nil
+}
+
+// Audit stages an immutable audit fact for a derived batch stream (see AuditStreamEntity)
+// or for a stream resolved by Repository WithAuditRouter. It does not run domain handlers,
+// does not append to uncommitted events, and is never replayed by Load.
+//
+// The event's GetAreas() must include the domain aggregate area.
+func (a *aggregateBase) Audit(event DomainEvent) error {
+	domainArea := a.entity.Area
+	if !eventListsSpace(event, domainArea) {
+		panic(fmt.Sprintf(errAuditInvalidAggregateSpace, domainArea, event))
+	}
+
+	auditEntity := AuditStreamEntity(a.entity)
+	if len(a.pendingAudits) > 0 {
+		auditEntity = a.pendingAudits[0].Entity
+	}
+	a.pendingAudits = append(a.pendingAudits, PendingAudit{
+		Event:     event,
+		Entity:    auditEntity,
+		EventID:   uuid.New(),
+		Timestamp: timestamp.GetTimestamp(),
+	})
+	return nil
+}
+
+func eventListsSpace(event DomainEvent, area string) bool {
+	for _, s := range event.GetAreas() {
+		if s == area {
+			return true
+		}
+	}
+	return false
 }
 
 // Load replays committed events onto an aggregate

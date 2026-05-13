@@ -68,6 +68,18 @@ func TestShouldCreateTenantEntityInAreaWithGeneratedID(t *testing.T) {
 	assert.Equal(t, tenantID, entity.TenantID)
 }
 
+func TestShouldCreateAuditStreamEntityWithGeneratedIDAndSameArea(t *testing.T) {
+	domain := NewTenantEntity(uuid.New(), uuid.New(), "users")
+
+	audit := AuditStreamEntity(domain)
+
+	assert.NotEqual(t, uuid.Nil, audit.ID)
+	assert.NotEqual(t, domain.ID, audit.ID)
+	assert.Equal(t, domain.Area, audit.Area)
+	assert.Equal(t, domain.TenantID, audit.TenantID)
+	assert.Equal(t, domain.Scope, audit.Scope)
+}
+
 func TestShouldReturnCorrectSpaceForGlobalEntity(t *testing.T) {
 	// Arrange
 	entity := NewEntity(uuid.New(), "test-area")

@@ -281,6 +281,89 @@ func TestShouldRecordSpanErrorWhenSaveFails(t *testing.T) {
 	mockStore.AssertExpectations(t)
 }
 
+func TestShouldPersistAuditsBeforeDomainStream(t *testing.T) {
+	ctx := context.Background()
+	store := NewInMemoryEventStore()
+	repo := NewRepository(store)
+	dummy := NewDummy()
+	_ = dummy.LogAudit("login")
+	_ = dummy.Create("alice")
+	auditEntity := dummy.GetPendingAudits()[0].Entity
+
+	err := repo.Save(ctx, dummy)
+	assert.NoError(t, err)
+
+	auditEvents, err := store.LoadEvents(ctx, auditEntity, 0)
+	assert.NoError(t, err)
+	domainEvents, err := store.LoadEvents(ctx, dummy.GetEntity(), 0)
+	assert.NoError(t, err)
+	assert.Len(t, auditEvents, 1)
+	assert.Len(t, domainEvents, 1)
+	meta := auditEvents[0].GetMetadata()
+	assert.Equal(t, auditEntity, meta.Entity)
+	assert.Equal(t, uint64(1), meta.Sequence)
+	assert.NotEqual(t, dummy.GetEntity().ID, meta.Entity.ID)
+	assert.Equal(t, dummy.GetEntity().Area, meta.Entity.Area)
+}
+
+func TestShouldSavePendingAuditsWithoutDomainUncommitted(t *testing.T) {
+	ctx := context.Background()
+	store := NewInMemoryEventStore()
+	repo := NewRepository(store)
+	dummy := NewDummy()
+	_ = dummy.LogAudit("peek")
+	auditEntity := dummy.GetPendingAudits()[0].Entity
+
+	err := repo.Save(ctx, dummy)
+	assert.NoError(t, err)
+
+	auditEvents, err := store.LoadEvents(ctx, auditEntity, 0)
+	assert.NoError(t, err)
+	assert.Len(t, auditEvents, 1)
+	domainEvents, err := store.LoadEvents(ctx, dummy.GetEntity(), 0)
+	assert.NoError(t, err)
+	assert.Len(t, domainEvents, 0)
+	assert.Len(t, dummy.GetPendingAudits(), 0)
+}
+
+func TestShouldReturnAuditRouterErrorBeforeWriting(t *testing.T) {
+	ctx := context.Background()
+	store := NewInMemoryEventStore()
+	routerErr := errors.New("routing failed")
+	repo := NewRepository(store, WithAuditRouter(func(ctx context.Context, agg Aggregate, event DomainEvent) (Entity, error) {
+		return Entity{}, routerErr
+	}))
+	dummy := NewDummy()
+	_ = dummy.LogAudit("x")
+
+	err := repo.Save(ctx, dummy)
+	assert.ErrorIs(t, err, routerErr)
+
+	auditEntity := dummy.GetPendingAudits()[0].Entity
+	auditEvents, err := store.LoadEvents(ctx, auditEntity, 0)
+	assert.NoError(t, err)
+	assert.Len(t, auditEvents, 0)
+	assert.Len(t, dummy.GetPendingAudits(), 1)
+}
+
+func TestShouldTrimPendingAuditsWhenDomainSaveFailsAfterAuditPersisted(t *testing.T) {
+	mockStore := new(MockStore)
+	repo := NewRepository(mockStore)
+	dummy := NewDummy()
+	_ = dummy.LogAudit("a")
+	_ = dummy.Create("b")
+
+	auditEnt := dummy.GetPendingAudits()[0].Entity
+	mockStore.On("SaveEvents", mock.Anything, auditEnt, mock.Anything, uint64(0)).Return(nil).Once()
+	domainFail := errors.New("domain failed")
+	mockStore.On("SaveEvents", mock.Anything, dummy.GetEntity(), mock.Anything, uint64(0)).Return(domainFail).Once()
+
+	err := repo.Save(context.Background(), dummy)
+	assert.ErrorIs(t, err, domainFail)
+	assert.Len(t, dummy.GetPendingAudits(), 0)
+	mockStore.AssertExpectations(t)
+}
+
 func TestShouldCreateSpanWhenSaveIsNoOp(t *testing.T) {
 	// Arrange
 	spanRecorder := setupSpanRecorder(t)
@@ -300,6 +383,7 @@ func TestShouldCreateSpanWhenSaveIsNoOp(t *testing.T) {
 	assert.Len(t, spans, 1)
 	assertRepositorySpanAttributes(t, spans[0], spanRepositorySave, dummy.GetEntity(), correlationID, causationID)
 	assertSpanInt64Attribute(t, spans[0], attributeEventsCount, 0)
+	assertSpanInt64Attribute(t, spans[0], attributePendingAuditCount, 0)
 	assertSpanStringAttribute(t, spans[0], attributeSequenceExpected, "0")
 	assertSpanStringAttribute(t, spans[0], attributeSequenceCurrent, "0")
 	assert.Equal(t, codes.Unset, spans[0].Status().Code)

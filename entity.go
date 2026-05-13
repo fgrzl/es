@@ -44,6 +44,18 @@ func NewTenantEntityInArea(tenantID, id uuid.UUID, area string) Entity {
 	}
 }
 
+// AuditStreamEntity returns a new default audit stream identity derived from a domain aggregate.
+// It shares Area, TenantID, and Scope with the domain entity, but uses a fresh ID so
+// each audit batch is an independent stream.
+func AuditStreamEntity(domain Entity) Entity {
+	return Entity{
+		ID:       uuid.New(),
+		Area:     domain.Area,
+		TenantID: domain.TenantID,
+		Scope:    domain.Scope,
+	}
+}
+
 // EmptyEntity represents an uninitialized entity.
 var EmptyEntity = Entity{}
 

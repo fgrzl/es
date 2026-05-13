@@ -3,14 +3,24 @@
 
 # es
 
-A comprehensive event sourcing library for Go providing clean, extensible interfaces for building event-driven applications.
+A focused event sourcing library for Go: aggregates, domain events, a `Store` contract, repository load/save, optional **audit batch streams**, and OpenTelemetry hooks.
+
+## Documentation
+
+| Resource | Description |
+|----------|-------------|
+| [docs/README.md](docs/README.md) | Overview, mental model, principles, doc index |
+| [docs/getting-started.md](docs/getting-started.md) | Walkthrough: events, aggregate, repository |
+| [docs/api-reference.md](docs/api-reference.md) | Interfaces, factories, types, patterns |
+| [docs/audit_events.md](docs/audit_events.md) | `Audit` vs `Raise`, persistence order, consumers |
 
 ## Features
 
 - **Aggregate Roots**: Event-sourced aggregates with automatic event registration and replay
 - **Event Handling**: Type-safe event handlers with generic registration
-- **Event Storage**: Pluggable event store interface with in-memory implementation
+- **Event storage**: `Store` interface in this module; **production implementations live in your codebase**; `NewInMemoryEventStore` for tests and local development
 - **Repository Pattern**: High-level aggregate persistence with optimistic concurrency control
+- **Derived audit streams**: `Aggregate.Audit` stages immutable `DomainEvent` rows on fresh batch streams derived from the current aggregate (not replayed on `Load`); `Repository.Save` persists audits before domain events
 - **Multi-tenancy**: Support for global and tenant-scoped aggregates
 - **Context Propagation**: Built-in correlation and causation tracking
 - **OpenTelemetry Spans**: Repository load and save operations emit OTEL spans with aggregate metadata
@@ -91,14 +101,16 @@ type CatRenamed struct {
 }
 
 func (e *CatRenamed) GetDiscriminator() string { return "cat.renamed" }
-func (e *CatRenamed) GetSpaces() []string      { return []string{"cats"} }
+func (e *CatRenamed) GetAreas() []string         { return []string{"cats"} }
+func (e *CatRenamed) GetSpaces() []string        { return e.GetAreas() }
 
 type CatAdopted struct {
 	es.DomainEventBase
 }
 
 func (e *CatAdopted) GetDiscriminator() string { return "cat.adopted" }
-func (e *CatAdopted) GetSpaces() []string      { return []string{"cats"} }
+func (e *CatAdopted) GetAreas() []string         { return []string{"cats"} }
+func (e *CatAdopted) GetSpaces() []string        { return e.GetAreas() }
 ```
 
 ### 3. Use the Repository
@@ -176,7 +188,7 @@ Aggregate wiring is intentionally fail-fast in this library. The default aggrega
 - missing aggregate IDs or tenant IDs
 - empty aggregate areas
 - duplicate handler registration
-- event types whose `GetSpaces()` do not include the aggregate area
+- event types whose `GetAreas()` do not include the aggregate area
 
 These are treated as programmer errors in aggregate design, not recoverable runtime conditions. Business-rule failures should still be returned from your command methods as ordinary `error` values.
 

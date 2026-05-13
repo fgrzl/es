@@ -4,7 +4,7 @@ This guide will walk you through building your first event-sourced application u
 
 ## Prerequisites
 
-- Go 1.21 or later
+- Go 1.25 or later (see the `go` directive in this library’s `go.mod` for the exact minimum)
 - Basic understanding of event sourcing concepts
 - Familiarity with Go interfaces and structs
 
@@ -38,7 +38,8 @@ type AccountOpened struct {
 }
 
 func (e *AccountOpened) GetDiscriminator() string { return "account.opened" }
-func (e *AccountOpened) GetSpaces() []string      { return []string{"bank-accounts"} }
+func (e *AccountOpened) GetAreas() []string         { return []string{"bank-accounts"} }
+func (e *AccountOpened) GetSpaces() []string        { return e.GetAreas() }
 
 type MoneyDeposited struct {
     es.DomainEventBase
@@ -46,7 +47,8 @@ type MoneyDeposited struct {
 }
 
 func (e *MoneyDeposited) GetDiscriminator() string { return "money.deposited" }
-func (e *MoneyDeposited) GetSpaces() []string      { return []string{"bank-accounts"} }
+func (e *MoneyDeposited) GetAreas() []string         { return []string{"bank-accounts"} }
+func (e *MoneyDeposited) GetSpaces() []string        { return e.GetAreas() }
 
 type MoneyWithdrawn struct {
     es.DomainEventBase
@@ -54,8 +56,11 @@ type MoneyWithdrawn struct {
 }
 
 func (e *MoneyWithdrawn) GetDiscriminator() string { return "money.withdrawn" }
-func (e *MoneyWithdrawn) GetSpaces() []string      { return []string{"bank-accounts"} }
+func (e *MoneyWithdrawn) GetAreas() []string         { return []string{"bank-accounts"} }
+func (e *MoneyWithdrawn) GetSpaces() []string        { return e.GetAreas() }
 ```
+
+Each event type implements **`GetAreas()`** for `Raise` / `Audit` wiring checks. **`GetSpaces()`** is deprecated and should return the same slice as `GetAreas()` until you drop legacy callers. After events are raised and saved, **`GetArea()`** (from `DomainEventBase`) reflects the area on stamped metadata. For audit-only facts that must not affect replay, see [Audit events](audit_events.md).
 
 ## Step 2: Create Your Aggregate
 
@@ -178,9 +183,9 @@ import (
 )
 
 func main() {
-    // Create event store and repository
+    // In-memory store is for tests and local dev; production Store implementations live in your repo.
     store := es.NewInMemoryEventStore()
-    repo := es.NewRepository(store)
+    repo := es.NewRepository(store) // optional: es.WithAuditRouter(...) — see API reference
     
     // Create a new bank account
     aggregateID := uuid.New()
@@ -273,10 +278,11 @@ func TestShouldReturnErrorWhenWithdrawingMoreThanBalance(t *testing.T) {
 }
 ```
 
-## Next Steps
+## Next steps
 
-- Explore advanced features like multi-tenancy
-- Implement custom event stores for persistence
-- Add event publishing for integration with other systems
-- Consider event versioning strategies for schema evolution
-- Learn about projections and read models for queries
+- Read the [documentation hub](README.md) for architecture, terminology, and links.
+- Use the [API reference](api-reference.md) while wiring `Store`, `Repository`, and tracing helpers.
+- If you record **audit** facts with `Audit`, read [Audit events](audit_events.md) (save order, batch streams, metadata).
+- Multi-tenancy: `NewTenantAggregate` / `NewTenantEntity` (see [API reference](api-reference.md#newtenantaggregate)).
+- Persistence: implement `Store` against your database or event log; keep append semantics and optimistic concurrency aligned with `SaveEvents`.
+- Integrations: publish from your store or outbox; consider schema evolution and projections in your application layer.

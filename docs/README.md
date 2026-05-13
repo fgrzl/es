@@ -1,89 +1,72 @@
-# Event Sourcing Documentation
+# Event sourcing (`es`) — documentation
 
-This directory contains comprehensive documentation for the `es` event sourcing library.
+This folder is the **canonical guide** for the [`github.com/fgrzl/es`](https://github.com/fgrzl/es) library: aggregates, domain events, audit batch streams, repository behavior, and how `Store` fits in.
 
-## Architecture Overview
+## Contents
 
-The library is built around several core concepts:
+| Doc | Purpose |
+|-----|---------|
+| [Getting started](getting-started.md) | Walkthrough: events with `GetAreas`, aggregate, repository, tests |
+| [API reference](api-reference.md) | Interfaces, factories, types, errors, usage snippets |
+| [Audit events](audit_events.md) | `Audit` vs `Raise`, batch streams, save order, consumers, philosophy |
 
-### 1. Aggregates
-Aggregates are the main building blocks that represent business entities. They:
-- Encapsulate business logic and maintain state
-- Generate domain events when state changes occur
-- Provide event handlers to reconstruct state from events
-- Support both global and tenant-scoped instances
+## What the library is
 
-### 2. Domain Events
-Events are immutable records that represent facts about what happened:
-- Implement the `DomainEvent` interface
-- Include rich metadata (correlation ID, causation ID, timestamps)
-- Support polymorphic serialization for persistence
-- Enable event replay and aggregate reconstruction
+`es` is a **small, opinionated core** for event-sourced aggregates in Go:
 
-### 3. Event Store
-The event store provides persistence for domain events:
-- Interface-based design supports multiple implementations
-- Optimistic concurrency control prevents conflicts
-- Sequence-based ordering ensures event consistency
-- Built-in filtering by sequence number
+- **`Store`** — append and read events by `Entity` (stream key), with optimistic concurrency on `SaveEvents`.
+- **`Repository`** — `Load` / `Save` for one **domain** aggregate stream; `Save` also flushes **pending audits** to separate **audit batch streams** before appending domain events.
+- **`Aggregate`** — replay (`Load`), `Raise` (domain handlers + uncommitted), `Audit` (stage only; no replay into aggregate).
+- **`DomainEvent`** — polymorphic events + metadata; **`GetAreas()`** lists allowed aggregate **areas** for wiring; **`GetSpaces()`** is deprecated and should delegate to `GetAreas()`.
 
-### 4. Repository Pattern
-Repositories provide high-level aggregate operations:
-- Load aggregates from event streams
-- Save uncommitted events with conflict detection
-- Automatic event application and state reconstruction
-- Transaction-like semantics with commit operations
+Production **`Store` implementations** (Postgres, EventStoreDB, Kafka-backed logs, etc.) **live in your repos**, not in `es`. This module defines the **`Store` interface** and ships **`NewInMemoryEventStore`** for tests and local development only.
 
-## Design Principles
+## Architecture (mental model)
 
-### Type Safety
-- Generic event handler registration prevents runtime errors
-- Compile-time type checking for event handlers
-- Strong typing throughout the API surface
+```text
+                    ┌──────────────┐
+                    │   Context    │  correlation / causation (optional)
+                    └──────┬───────┘
+                           │
+    Command ──► Aggregate (domain Entity) ──► Raise ──► uncommitted ──┐
+           │                         │                               │
+           │                         └──► Audit ──► pendingAudits ─────┤
+           │                                                           │
+           └──────────────────────────────► Repository.Save ──────────┤
+                                              │                         │
+                         audit batch Entity(s) │                         │ domain Entity
+                                              ▼                         ▼
+                                         Store.SaveEvents         Store.SaveEvents
+                                         (expectedSeq 0)          (expectedSeq = committed len)
+```
 
-### Fail-Fast Wiring
-- Aggregate construction and handler registration are treated as design-time concerns
-- Invalid aggregate IDs, tenant IDs, duplicate handlers, and invalid event-area mappings panic immediately
-- Business-rule failures should still be returned from command methods as ordinary errors
+`Repository.Load` reads **only** the domain `Entity` stream. Audit batch streams are **never** passed into `Load`.
 
-### Extensibility
-- Interface-based design allows custom implementations
-- Pluggable event stores for different persistence needs
-- Customizable aggregate behaviors
+## Design principles (summary)
 
-### Multi-tenancy
-- Built-in support for tenant-scoped aggregates
-- Tenant isolation at the entity level
-- Consistent patterns for global and tenant operations
+- **Fail-fast wiring** — invalid aggregate ids, duplicate handlers, or events whose `GetAreas()` omit the aggregate’s `Area` surface as panics in the default implementation (design-time mistakes).
+- **Metadata honesty** — persisted audit rows use `EventMetadata.Entity` for the **audit batch stream** (new stream id per batch), not the business root; link subjects via correlation and payload.
+- **Replay purity** — audit volume does not affect aggregate reconstruction.
+- **Tracing** — repository operations emit OpenTelemetry spans; pass correlation/causation via `ContextWithTracing` where needed.
 
-### Performance
-- Minimal allocations in hot paths
-- Efficient event filtering and loading
-- Thread-safe concurrent operations
+## Where to go next
 
-## Best Practices
+1. Read [Getting started](getting-started.md) if you are new to the API shape.
+2. Use [API reference](api-reference.md) while coding against interfaces.
+3. Read [Audit events](audit_events.md) before mixing `Audit` with domain `Save` semantics or building projections over audit streams.
 
-### Event Design
-- Keep events immutable and side-effect free
-- Include all necessary data in the event payload
-- Use descriptive discriminator names
-- Version events for schema evolution
+## Best practices (short)
 
-### Aggregate Design
-- Keep aggregates focused on a single business concept
-- Implement business invariants in command methods
-- Use event handlers only for state application
-- Avoid external dependencies in aggregate logic
+- Implement **`GetAreas()`** on every event type; keep **`GetSpaces() = GetAreas()`** until you drop deprecated API in a major version.
+- Put **subject / origin ids in audit payloads** when downstream needs them; do not overload `GetAggregateID()` on audits.
+- Treat **`Repository.Save`** as **not** one atomic transaction across audit + domain unless your `Store` implements that.
+- Test aggregates through **command methods**; use the in-memory store for unit tests.
 
-### Error Handling
-- Use standard error types provided by the library for store and integration failures
-- Handle concurrency conflicts gracefully
-- Validate business rules before raising events
-- Return early on validation failures
-- Treat aggregate wiring panics as programmer errors to fix rather than runtime conditions to recover from
+## Testing
 
-### Testing
-- Test business logic through aggregate methods
-- Use behavioral test naming conventions
-- Mock external dependencies
-- Test error conditions and edge cases
+- Prefer **`es.NewInMemoryEventStore()`** in tests.
+- Naming: behavioral test names (`TestShould…`) match the style used in this repository.
+
+## Contributing
+
+See the root [README](../README.md) for CI, tests (`go test ./...`), and contribution expectations.
