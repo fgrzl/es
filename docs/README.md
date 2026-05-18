@@ -67,6 +67,8 @@ Production **`Store` implementations** (Postgres, EventStoreDB, Kafka-backed log
 - Prefer **`es.NewInMemoryEventStore()`** in tests.
 - Naming: behavioral test names (`TestShould…`) match the style used in this repository.
 
-## Contributing
+## Related
 
-See the root [README](../README.md) for CI, tests (`go test ./...`), and contribution expectations.
+- [README](../README.md) — project entry point
+- [CHANGELOG](../CHANGELOG.md) — release notes
+- [CONTRIBUTING](../CONTRIBUTING.md) — contribution workflow
