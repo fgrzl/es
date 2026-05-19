@@ -3,7 +3,7 @@ module github.com/fgrzl/es
 go 1.25.6
 
 require (
-	github.com/fgrzl/json v1.0.0
+	github.com/fgrzl/json v1.0.1
 	github.com/fgrzl/timestamp v1.0.0
 	github.com/google/uuid v1.6.0
 	github.com/stretchr/testify v1.11.1
